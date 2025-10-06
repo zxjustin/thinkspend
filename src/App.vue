@@ -1,18 +1,5 @@
 <template>
-  <RouterView />
+  <div class="min-h-screen bg-gray-50">
+    <RouterView />
+  </div>
 </template>
-
-<style>
-#app {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  min-height: 100vh;
-}
-
-.login-container {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-</style>
