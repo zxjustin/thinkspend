@@ -6,7 +6,12 @@ const routes = [
     path: '/',
     name: 'login',
     component: LoginView
-  }
+  },  
+  {
+  path: '/notes',
+  name: 'notes',
+  component: () => import('@/views/NotesView.vue')
+}
 ]
 
 const router = createRouter({
