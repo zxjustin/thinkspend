@@ -2,39 +2,36 @@
   <div>
     <!-- Folder Row -->
     <div 
-      class="flex items-center gap-2 px-2 py-2 rounded cursor-pointer hover:bg-surface-100 transition-colors"
-      :style="{ paddingLeft: `${depth * 16 + 8}px` }"
+      class="group flex items-center gap-2 px-3 py-2 rounded cursor-pointer hover:bg-gray-100 transition-colors"
+      :style="{ paddingLeft: `${depth * 16 + 12}px` }"
       @click="toggleExpanded"
     >
-      <!-- Expand/Collapse Icon -->
+      <!-- Expand Icon -->
       <i 
-        :class="hasChildren ? (isExpanded ? 'pi pi-chevron-down' : 'pi pi-chevron-right') : 'pi pi-minus'"
-        class="text-xs text-surface-500"
+        v-if="hasChildren"
+        :class="isExpanded ? 'pi pi-chevron-down' : 'pi pi-chevron-right'"
+        class="text-xs text-gray-600"
       ></i>
+      <div v-else class="w-3"></div>
       
       <!-- Folder Icon -->
-      <i class="pi pi-folder text-primary-500"></i>
+      <i 
+        :class="isExpanded ? 'pi pi-folder-open' : 'pi pi-folder'"
+        class="text-blue-600"
+      ></i>
       
       <!-- Folder Name -->
-      <span class="text-sm text-surface-700 flex-1">{{ folder.name }}</span>
+      <span class="text-sm font-medium text-gray-700 flex-1">{{ folder.name }}</span>
       
-      <!-- Actions -->
-      <Button
-        icon="pi pi-plus"
-        text
+      <!-- Add Note Button -->
+      <Button 
+        icon="pi pi-plus" 
+        text 
         rounded
         size="small"
+        class="opacity-0 group-hover:opacity-100"
         @click.stop="createNote"
         v-tooltip.top="'New Note'"
-      />
-      <Button
-        icon="pi pi-trash"
-        text
-        rounded
-        size="small"
-        severity="danger"
-        @click.stop="confirmDeleteFolder"
-        v-tooltip.top="'Delete Folder'"
       />
     </div>
 
@@ -47,25 +44,34 @@
     </div>
 
     <!-- Notes in this Folder -->
-    <div v-if="isExpanded" class="ml-6">
-      <div
-        v-for="note in folderNotes"
+    <div v-if="isExpanded">
+      <div 
+        v-for="note in folderNotes" 
         :key="note.id"
-        class="flex items-center gap-2 px-2 py-1.5 rounded cursor-pointer hover:bg-surface-100 transition-colors group"
-        :class="{ 'bg-primary-50': isSelected(note.id) }"
+        class="flex items-center gap-2 px-3 py-2 rounded cursor-pointer hover:bg-blue-50 transition-colors"
+        :class="{ 
+          'bg-blue-100 border-l-2 border-blue-600': isSelected(note.id) 
+        }"
+        :style="{ paddingLeft: `${(depth + 1) * 16 + 12}px` }"
         @click="selectNote(note)"
       >
-        <i class="pi pi-file text-xs text-surface-400"></i>
-        <span class="text-sm text-surface-600 flex-1">{{ note.title }}</span>
-        <Button
-          icon="pi pi-trash"
-          text
-          rounded
-          size="small"
-          severity="danger"
-          @click.stop="confirmDeleteNote(note.id)"
-          v-tooltip.top="'Delete Note'"
-        />
+        <i class="pi pi-file text-xs text-gray-500"></i>
+        <div class="flex-1 min-w-0">
+          <div class="text-sm text-gray-800 truncate">{{ note.title }}</div>
+          
+          <!-- Connection Badges -->
+          <div v-if="noteConnections(note.id).expenses > 0 || noteConnections(note.id).links > 0" 
+               class="flex gap-2 text-xs text-gray-500 mt-0.5">
+            <span v-if="noteConnections(note.id).expenses > 0" class="flex items-center gap-0.5">
+              <i class="pi pi-dollar text-[10px]"></i>
+              {{ noteConnections(note.id).expenses }}
+            </span>
+            <span v-if="noteConnections(note.id).links > 0" class="flex items-center gap-0.5">
+              <i class="pi pi-link text-[10px]"></i>
+              {{ noteConnections(note.id).links }}
+            </span>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -74,7 +80,7 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { useNotesStore } from '@/stores/notes'
-import { useConfirm } from 'primevue/useconfirm'
+import { useExpensesStore } from '@/stores/expenses'
 import Button from 'primevue/button'
 import FolderTree from './FolderTree.vue'
 
@@ -87,11 +93,12 @@ const props = defineProps({
 })
 
 const notesStore = useNotesStore()
-const confirm = useConfirm()
+const expensesStore = useExpensesStore()
 const isExpanded = ref(false)
 
 const hasChildren = computed(() => {
-  return notesStore.folders.some(f => f.parent_id === props.folder.id)
+  return notesStore.folders.some(f => f.parent_id === props.folder.id) ||
+         notesStore.notes.some(n => n.folder_id === props.folder.id)
 })
 
 const childFolders = computed(() => {
@@ -111,6 +118,9 @@ function toggleExpanded() {
 
 async function createNote() {
   await notesStore.createNote(props.folder.id)
+  if (!isExpanded.value) {
+    isExpanded.value = true
+  }
 }
 
 function selectNote(note) {
@@ -121,31 +131,14 @@ function isSelected(noteId) {
   return notesStore.currentNote?.id === noteId
 }
 
-function confirmDeleteFolder() {
-  confirm.require({
-    message: `Delete "${props.folder.name}" and all its contents?`,
-    header: 'Confirm Delete',
-    icon: 'pi pi-exclamation-triangle',
-    rejectLabel: 'Cancel',
-    acceptLabel: 'Delete',
-    acceptClass: 'p-button-danger',
-    accept: async () => {
-      await notesStore.deleteFolder(props.folder.id)
-    }
-  })
-}
-
-function confirmDeleteNote(noteId) {
-  confirm.require({
-    message: 'Delete this note?',
-    header: 'Confirm Delete',
-    icon: 'pi pi-exclamation-triangle',
-    rejectLabel: 'Cancel',
-    acceptLabel: 'Delete',
-    acceptClass: 'p-button-danger',
-    accept: async () => {
-      await notesStore.deleteNote(noteId)
-    }
-  })
+function noteConnections(noteId) {
+  const expenses = expensesStore.expenses.filter(e => e.source_note_id === noteId).length
+  
+  // Count wiki-links
+  const note = notesStore.notes.find(n => n.id === noteId)
+  const linkPattern = /\[\[([^\]]+)\]\]/g
+  const links = note ? (note.content.match(linkPattern) || []).length : 0
+  
+  return { expenses, links }
 }
 </script>

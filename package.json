@@ -11,6 +11,10 @@
   "dependencies": {
     "@primeuix/themes": "^1.2.5",
     "@supabase/supabase-js": "^2.58.0",
+    "@tiptap/extension-link": "^3.6.6",
+    "@tiptap/extension-underline": "^3.6.6",
+    "@tiptap/starter-kit": "^3.6.6",
+    "@tiptap/vue-3": "^3.6.6",
     "pinia": "^3.0.3",
     "primeicons": "^7.0.0",
     "primevue": "^4.4.0",
