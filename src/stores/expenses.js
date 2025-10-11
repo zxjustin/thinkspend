@@ -6,6 +6,8 @@ export const useExpensesStore = defineStore('expenses', () => {
   const expenses = ref([])
 
   async function createExpense(expenseData) {
+    const { data: { user } } = await supabase.auth.getUser()
+
     const { data, error } = await supabase
       .from('expenses')
       .insert({
@@ -14,7 +16,8 @@ export const useExpensesStore = defineStore('expenses', () => {
         category: expenseData.category,
         date: expenseData.date || new Date().toISOString().split('T')[0],
         source_note_id: expenseData.source_note_id || null,
-        detection_method: expenseData.detection_method || 'inline'
+        detection_method: expenseData.detection_method || 'inline',
+        user_id: user.id
       })
       .select()
       .single()
