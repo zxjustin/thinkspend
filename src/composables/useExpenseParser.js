@@ -10,26 +10,43 @@ export function useExpenseParser() {
   ]
 
   /**
-   * Parses expenses from text
-   * Format: $amount - description - category
-   * Example: $250 - Adobe License - Software
+   * Strip HTML tags from text
+   */
+  function stripHtml(html) {
+    if (!html) return ''
+    const temp = document.createElement('div')
+    temp.innerHTML = html
+    return temp.textContent || temp.innerText || ''
+  }
+
+  /**
+   * Parses expenses from text (supports HTML from Quill)
+   *
+   * Explicit format using square brackets:
+   * - $amount Description [Category]   (e.g., $250 Adobe License [Software])
+   * - $amount Description [Other]      (e.g., $25 Lunch [Other])
+   *
+   * Normal text with $ is ignored unless bracketed
    */
   function parseExpenses(text) {
     if (!text) return []
 
-    // Regex pattern: $amount - description - category
-    const expensePattern = /\$(\d+(?:\.\d{2})?)\s*-\s*([^-]+?)\s*-\s*([^-\n]+)/g
+    // Strip HTML tags (Quill returns HTML)
+    const plainText = stripHtml(text)
+
     const expenses = []
+
+    // Only pattern: $amount Description [Category]
+    // This is explicit - only track when brackets are present
+    const bracketPattern = /\$(\d+(?:\.\d{1,2})?)\s+([^\[\n$]+?)\s*\[([^\]]+)\]/g
     let match
 
-    while ((match = expensePattern.exec(text)) !== null) {
+    while ((match = bracketPattern.exec(plainText)) !== null) {
       const amount = parseFloat(match[1])
       const description = match[2].trim()
       const category = match[3].trim()
 
-      // Validate
-      if (amount > 0 && description && category) {
-        // Check if category is valid (case-insensitive)
+      if (amount > 0 && description) {
         const isValidCategory = VALID_CATEGORIES.some(
           cat => cat.toLowerCase() === category.toLowerCase()
         )
@@ -39,7 +56,8 @@ export function useExpenseParser() {
           description,
           category: isValidCategory ? category : 'Other',
           position: match.index,
-          valid: isValidCategory
+          valid: isValidCategory,
+          format: 'bracket'
         })
       }
     }
