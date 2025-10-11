@@ -24,6 +24,7 @@
 
 <script setup>
 import { ref } from 'vue'
+import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import Card from 'primevue/card'
 import InputText from 'primevue/inputtext'
@@ -31,11 +32,23 @@ import Password from 'primevue/password'
 import Button from 'primevue/button'
 
 const auth = useAuthStore()
+const router = useRouter()
 const email = ref('')
 const password = ref('')
 
-const signIn = () => auth.signIn(email.value, password.value)
-const signUp = () => auth.signUp(email.value, password.value)
+const signIn = async () => {
+  await auth.signIn(email.value, password.value)
+  if (auth.user) {
+    router.push('/notes')
+  }
+}
+
+const signUp = async () => {
+  await auth.signUp(email.value, password.value)
+  if (auth.user) {
+    router.push('/notes')
+  }
+}
 </script>
 
 <style scoped>

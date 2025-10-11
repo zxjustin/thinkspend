@@ -1,4 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import { supabase } from '@/lib/supabase'
 import LoginView from '@/views/LoginView.vue'
 import ExpensesView from '@/views/ExpensesView.vue'
 
@@ -15,7 +16,8 @@ const routes = [
   {
     path: '/notes',
     name: 'notes',
-    component: () => import('@/views/NotesView.vue')
+    component: () => import('@/views/NotesView.vue'),
+    meta: { requiresAuth: true }
   },
   {
     path: '/expenses',
@@ -30,11 +32,21 @@ const router = createRouter({
   routes
 })
 
-// Add navigation guard for authentication (you'll implement this later)
-router.beforeEach((to, from, next) => {
-  // Check if route requires auth
-  // For now, allow all routes
-  next()
+// Navigation guard for authentication
+router.beforeEach(async (to, from, next) => {
+  const requiresAuth = to.matched.some(record => record.meta.requiresAuth)
+
+  if (requiresAuth) {
+    const { data: { session } } = await supabase.auth.getSession()
+
+    if (!session) {
+      next('/login')
+    } else {
+      next()
+    }
+  } else {
+    next()
+  }
 })
 
 export default router

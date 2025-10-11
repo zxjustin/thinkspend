@@ -56,12 +56,33 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
+  const initialize = async () => {
+    loading.value = true
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (session) {
+        user.value = session.user
+      }
+
+      // Listen for auth changes
+      supabase.auth.onAuthStateChange((_event, session) => {
+        user.value = session?.user || null
+      })
+    } catch (err) {
+      error.value = err.message
+      console.error('Initialize error:', err)
+    } finally {
+      loading.value = false
+    }
+  }
+
   return {
     user,
     loading,
     error,
     signIn,
     signUp,
-    signOut
+    signOut,
+    initialize
   }
 })
