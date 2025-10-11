@@ -1,21 +1,69 @@
 <template>
-  <div class="flex justify-center items-center min-h-screen">
-    <Card class="w-full max-w-md shadow-lg">
-      <template #title>
-        <h2 class="text-2xl font-bold text-center">ThinkSpend Login</h2>
+  <div class="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 flex items-center justify-center p-4">
+    <Card class="w-full max-w-md shadow-2xl">
+      <template #header>
+        <div class="flex flex-col items-center pt-6 pb-4">
+          <!-- Logo -->
+          <div class="w-16 h-16 bg-gradient-to-br from-blue-600 to-purple-600 rounded-xl flex items-center justify-center mb-4">
+            <span class="text-white font-bold text-3xl">TS</span>
+          </div>
+          <h1 class="text-2xl font-bold text-gray-800">ThinkSpend</h1>
+          <p class="text-sm text-gray-500 mt-1">Personal Knowledge Management + Expenses</p>
+        </div>
       </template>
+
       <template #content>
-        <div class="flex flex-col gap-4">
-          <div v-if="auth.error" class="bg-red-50 text-red-600 p-3 rounded-lg border border-red-200">
-            ❌ {{ auth.error }}
+        <div class="space-y-4 px-6 pb-6">
+          <!-- Email Input -->
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">Email</label>
+            <InputText 
+              v-model="email" 
+              type="email"
+              placeholder="you@example.com"
+              class="w-full"
+            />
           </div>
-          <div v-if="auth.user" class="bg-green-50 text-green-600 p-3 rounded-lg border border-green-200">
-            ✅ Logged in as {{ auth.user.email }}
+
+          <!-- Password Input -->
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">Password</label>
+            <Password 
+              v-model="password" 
+              placeholder="••••••••"
+              :feedback="false"
+              toggleMask
+              class="w-full"
+            />
           </div>
-          <InputText v-model="email" placeholder="Email" class="w-full" />
-          <Password v-model="password" placeholder="Password" class="w-full" toggleMask />
-          <Button label="Sign In" @click="signIn" :loading="auth.loading" class="w-full" />
-          <Button label="Sign Up" @click="signUp" severity="secondary" :loading="auth.loading" class="w-full" />
+
+          <!-- Error Message -->
+          <Message v-if="errorMessage" severity="error" :closable="false">
+            {{ errorMessage }}
+          </Message>
+
+          <!-- Buttons -->
+          <div class="space-y-2 pt-2">
+            <Button 
+              label="Sign In" 
+              @click="handleSignIn"
+              :loading="loading"
+              class="w-full bg-gradient-to-r from-blue-600 to-purple-600 border-0"
+            />
+            <Button 
+              label="Create Account" 
+              @click="handleSignUp"
+              :loading="loading"
+              severity="secondary"
+              outlined
+              class="w-full"
+            />
+          </div>
+
+          <!-- Info -->
+          <div class="text-center text-xs text-gray-500 mt-4 pt-4 border-t border-gray-200">
+            Use any email/password to create an account
+          </div>
         </div>
       </template>
     </Card>
@@ -30,26 +78,51 @@ import Card from 'primevue/card'
 import InputText from 'primevue/inputtext'
 import Password from 'primevue/password'
 import Button from 'primevue/button'
+import Message from 'primevue/message'
 
-const auth = useAuthStore()
 const router = useRouter()
+const authStore = useAuthStore()
+
 const email = ref('')
 const password = ref('')
+const loading = ref(false)
+const errorMessage = ref('')
 
-const signIn = async () => {
-  await auth.signIn(email.value, password.value)
-  if (auth.user) {
+async function handleSignIn() {
+  if (!email.value || !password.value) {
+    errorMessage.value = 'Please enter email and password'
+    return
+  }
+
+  loading.value = true
+  errorMessage.value = ''
+
+  try {
+    await authStore.signIn(email.value, password.value)
     router.push('/notes')
+  } catch (error) {
+    errorMessage.value = error.message || 'Invalid credentials'
+  } finally {
+    loading.value = false
   }
 }
 
-const signUp = async () => {
-  await auth.signUp(email.value, password.value)
-  if (auth.user) {
+async function handleSignUp() {
+  if (!email.value || !password.value) {
+    errorMessage.value = 'Please enter email and password'
+    return
+  }
+
+  loading.value = true
+  errorMessage.value = ''
+
+  try {
+    await authStore.signUp(email.value, password.value)
     router.push('/notes')
+  } catch (error) {
+    errorMessage.value = error.message || 'Could not create account'
+  } finally {
+    loading.value = false
   }
 }
 </script>
-
-<style scoped>
-</style>
