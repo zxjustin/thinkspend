@@ -3,13 +3,13 @@
     <div class="flex gap-4 h-[calc(100vh-200px)]">
       <!-- Sidebar -->
       <NoteSidebar class="w-64" />
-      
+
       <!-- Editor -->
       <NoteEditor class="flex-1" />
-      
+
       <!-- Connection Panel -->
-      <ConnectionPanel 
-        v-if="showConnectionPanel && currentNote" 
+      <ConnectionPanel
+        v-if="showConnectionPanel && currentNote"
         class="w-80"
         @close="showConnectionPanel = false"
       />
