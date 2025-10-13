@@ -13,7 +13,10 @@ const app = createApp(App)
 app.use(createPinia())
 app.use(PrimeVue, {
   theme: {
-    preset: Aura
+    preset: Aura,
+    options: {
+      darkModeSelector: 'none' // Disable automatic dark mode detection
+    }
   }
 })
 app.use(ConfirmationService)

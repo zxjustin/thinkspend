@@ -7,4 +7,12 @@
 body {
   margin: 0;
   font-family: system-ui, -apple-system, sans-serif;
+  background-color: #ffffff; /* Force light background */
+  color: #000000; /* Force dark text */
+}
+
+/* Ensure root element is also light */
+#app {
+  background-color: #ffffff;
+  color: #000000;
 }
