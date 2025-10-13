@@ -186,22 +186,27 @@ import StarterKit from '@tiptap/starter-kit'
 import Underline from '@tiptap/extension-underline'
 import Link from '@tiptap/extension-link'
 import { Extension } from '@tiptap/core'
+import { supabase } from '@/lib/supabase'
 import { useNotesStore } from '@/stores/notes'
 import { useExpensesStore } from '@/stores/expenses'
 import { useAutoSave } from '@/composables/useAutoSave'
 import { useExpenseParser } from '@/composables/useExpenseParser'
+import { useLinkDetector } from '@/composables/useLinkDetector'
+import WikiLink from './WikiLinkExtension'
 import InputText from 'primevue/inputtext'
 import Badge from 'primevue/badge'
 
 const notesStore = useNotesStore()
 const expensesStore = useExpensesStore()
 const { parseExpenses, VALID_CATEGORIES } = useExpenseParser()
+const { extractLinks } = useLinkDetector()
 
 const title = ref('')
 const content = ref('')
 const saveStatus = ref('saved')
 const detectedExpenses = ref([])
 const processedExpenses = ref(new Set())
+const processedLinks = ref(new Set()) // Track which links we've already stored
 
 const currentNote = computed(() => notesStore.currentNote)
 
@@ -252,6 +257,23 @@ const OrgMode = Extension.create({
   }
 })
 
+// Handle wiki link clicks
+async function handleWikiLinkClick(linkTitle) {
+  console.log('🔗 Wiki link clicked:', linkTitle)
+
+  // Find note by title
+  const targetNote = await notesStore.findNoteByTitle(linkTitle)
+
+  if (targetNote) {
+    // Navigate to the note
+    notesStore.selectNote(targetNote.id)
+    console.log('📍 Navigated to:', targetNote.title)
+  } else {
+    console.warn('⚠️ Note not found:', linkTitle)
+    // Optionally: show a toast notification or create the note
+  }
+}
+
 // Initialize TipTap Editor
 const editor = useEditor({
   extensions: [
@@ -262,7 +284,10 @@ const editor = useEditor({
     }),
     Underline,
     Link,
-    OrgMode
+    OrgMode,
+    WikiLink.configure({
+      onLinkClick: handleWikiLinkClick
+    })
   ],
   content: '',
   onUpdate: ({ editor }) => {
@@ -273,18 +298,21 @@ const editor = useEditor({
 // Auto-save composable
 const { triggerSave } = useAutoSave(async () => {
   if (!currentNote.value) return
-  
+
   saveStatus.value = 'saving'
-  
+
   try {
     await notesStore.updateNote(currentNote.value.id, {
       title: title.value,
       content: content.value
     })
-    
+
     // Process detected expenses
     await processDetectedExpenses()
-    
+
+    // Process detected links
+    await processDetectedLinks()
+
     saveStatus.value = 'saved'
   } catch (error) {
     saveStatus.value = 'error'
@@ -316,6 +344,7 @@ watch(currentNote, (note) => {
 
     saveStatus.value = 'saved'
     processedExpenses.value.clear()
+    processedLinks.value.clear() // Reset link tracking for new note
   }
 })
 
@@ -330,12 +359,26 @@ onBeforeUnmount(() => {
 async function processDetectedExpenses() {
   if (!currentNote.value) return
 
+  // Fetch existing expenses for this note from database
+  const { data: existingExpenses } = await supabase
+    .from('expenses')
+    .select('amount, description, category')
+    .eq('source_note_id', currentNote.value.id)
+
+  // Create a Set of existing expense keys
+  const existingKeys = new Set(
+    (existingExpenses || []).map(e => `${e.amount}-${e.description}-${e.category}`)
+  )
+
   for (const expense of detectedExpenses.value) {
     // Create unique identifier for this expense
     const expenseKey = `${expense.amount}-${expense.description}-${expense.category}`
 
-    // Skip if already processed
-    if (processedExpenses.value.has(expenseKey)) continue
+    // Skip if already exists in database OR already processed in this session
+    if (existingKeys.has(expenseKey) || processedExpenses.value.has(expenseKey)) {
+      console.log('⏭️ Skipping duplicate expense:', expenseKey)
+      continue
+    }
 
     try {
       // Create expense in database
@@ -357,10 +400,68 @@ async function processDetectedExpenses() {
 
       // Mark as processed
       processedExpenses.value.add(expenseKey)
+      existingKeys.add(expenseKey)
 
-      console.log('Created expense:', createdExpense)
+      console.log('✅ Created expense:', createdExpense)
     } catch (error) {
-      console.error('Failed to create expense:', error)
+      console.error('❌ Failed to create expense:', error)
+    }
+  }
+}
+
+// Process detected wiki-links after save
+async function processDetectedLinks() {
+  if (!currentNote.value) return
+
+  // Extract all [[links]] from content
+  const detectedLinkTitles = extractLinks(content.value)
+
+  // Fetch existing links from database to avoid duplicates
+  const existingLinks = await notesStore.fetchNoteLinks(currentNote.value.id)
+  const existingLinkTitles = new Set(existingLinks.map(link => link.link_text))
+
+  console.log('🔗 Detected links:', detectedLinkTitles)
+  console.log('📚 Existing links:', [...existingLinkTitles])
+
+  for (const linkTitle of detectedLinkTitles) {
+    // Skip if already processed in this session OR exists in database
+    if (processedLinks.value.has(linkTitle) || existingLinkTitles.has(linkTitle)) {
+      console.log('⏭️ Skipping existing link:', linkTitle)
+      continue
+    }
+
+    try {
+      // Try to find the target note by title
+      const targetNote = await notesStore.findNoteByTitle(linkTitle)
+
+      if (targetNote) {
+        // Target note exists - create link
+        await notesStore.createNoteLink(
+          currentNote.value.id,  // source (this note)
+          targetNote.id,          // target (the linked note)
+          linkTitle
+        )
+
+        processedLinks.value.add(linkTitle)
+        console.log('✅ Created link to existing note:', linkTitle)
+      } else {
+        // Target note doesn't exist yet
+        console.log('⚠️ Target note not found:', linkTitle, '(link not created)')
+        // Note: We could auto-create the note here, but for now we skip
+        // This follows Obsidian's behavior where links can point to non-existent notes
+      }
+    } catch (error) {
+      console.error('❌ Failed to create link:', linkTitle, error)
+    }
+  }
+
+  // Clean up: Remove processed links that are no longer in the content
+  // This handles the case where user deletes a [[link]]
+  const currentLinkSet = new Set(detectedLinkTitles)
+  for (const processedLink of processedLinks.value) {
+    if (!currentLinkSet.has(processedLink)) {
+      processedLinks.value.delete(processedLink)
+      console.log('🗑️ Removed deleted link from tracking:', processedLink)
     }
   }
 }
@@ -502,5 +603,37 @@ code {
 
 .tiptap-toolbar button:active {
   transform: translateY(0);
+}
+
+/* Wiki Link Styling */
+.wiki-link-text {
+  color: #7c3aed !important; /* Purple-600 */
+  background-color: #f3e8ff !important; /* Purple-50 */
+  padding: 2px 4px;
+  border-radius: 4px;
+  cursor: pointer !important;
+  font-weight: 500;
+  transition: all 0.2s;
+  border-bottom: 2px solid #a78bfa; /* Purple-400 */
+  user-select: none; /* Prevent text selection on click */
+  pointer-events: auto; /* Ensure clicks are captured */
+  display: inline; /* Ensure it's inline with text */
+}
+
+.wiki-link-text:hover {
+  background-color: #e9d5ff !important; /* Purple-100 */
+  border-bottom-color: #7c3aed; /* Purple-600 */
+  transform: translateY(-1px);
+}
+
+/* Make it clear it's clickable */
+.wiki-link-text:active {
+  transform: translateY(0);
+  background-color: #ddd6fe !important; /* Purple-200 */
+}
+
+/* Ensure TipTap editor allows pointer events */
+.tiptap-editor .wiki-link-text {
+  pointer-events: auto !important;
 }
 </style>
