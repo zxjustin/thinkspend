@@ -66,23 +66,23 @@
       <!-- Connected Items -->
       <div class="pt-4 border-t border-gray-200">
         <h4 class="text-sm font-semibold text-gray-700 mb-3">Connected Items</h4>
-        
+
         <!-- Connected Expenses -->
         <div class="mb-4">
           <div class="text-xs font-medium text-gray-600 mb-2">
             Expenses ({{ connectedExpenses.length }})
           </div>
-          
+
           <div v-if="connectedExpenses.length > 0" class="space-y-2">
-            <div 
-              v-for="exp in connectedExpenses" 
+            <div
+              v-for="exp in connectedExpenses"
               :key="exp.id"
               class="bg-gray-50 border border-gray-200 rounded-lg p-3"
             >
               <div class="flex items-center justify-between mb-1">
                 <div class="text-xs font-semibold text-gray-800">${{ exp.amount }}</div>
-                <Tag 
-                  :value="exp.detection_method" 
+                <Tag
+                  :value="exp.detection_method"
                   severity="info"
                   class="text-[10px] px-2 py-0.5"
                 />
@@ -94,6 +94,32 @@
             </div>
           </div>
           <div v-else class="text-xs text-gray-400 italic">No expenses linked</div>
+        </div>
+
+        <!-- Backlinks (Bidirectional) -->
+        <div class="mb-4">
+          <div class="text-xs font-medium text-gray-600 mb-2 flex items-center gap-1">
+            <i class="pi pi-arrow-left text-xs"></i>
+            Backlinks ({{ backlinks.length }})
+          </div>
+
+          <div v-if="backlinks.length > 0" class="space-y-1">
+            <div
+              v-for="link in backlinks"
+              :key="link.id"
+              class="bg-purple-50 border border-purple-200 rounded-lg p-2 cursor-pointer hover:bg-purple-100 transition-colors"
+              @click="navigateToNote(link.source.id)"
+            >
+              <div class="flex items-center gap-2">
+                <i class="pi pi-file text-purple-600 text-xs"></i>
+                <div class="font-semibold text-purple-800 text-xs">{{ link.source.title }}</div>
+              </div>
+              <div class="text-[10px] text-purple-600 mt-0.5">
+                ← Links to this note
+              </div>
+            </div>
+          </div>
+          <div v-else class="text-xs text-gray-400 italic">No notes link here</div>
         </div>
       </div>
 
@@ -109,7 +135,7 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { useNotesStore } from '@/stores/notes'
 import { useExpensesStore } from '@/stores/expenses'
 import Button from 'primevue/button'
@@ -121,6 +147,17 @@ const notesStore = useNotesStore()
 const expensesStore = useExpensesStore()
 
 const currentNote = computed(() => notesStore.currentNote)
+const backlinks = ref([]) // Stores notes that link TO this note
+
+// Fetch backlinks when note changes
+watch(currentNote, async (note) => {
+  if (note) {
+    backlinks.value = await notesStore.fetchBacklinks(note.id)
+    console.log('🔗 Loaded backlinks:', backlinks.value)
+  } else {
+    backlinks.value = []
+  }
+}, { immediate: true })
 
 const detectedExpenses = computed(() => {
   if (!currentNote.value?.content) return []
@@ -168,5 +205,11 @@ const connectedExpenses = computed(() => {
 function formatDate(dateString) {
   const date = new Date(dateString)
   return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+}
+
+// Navigate to a linked note
+function navigateToNote(noteId) {
+  notesStore.selectNote(noteId)
+  console.log('📍 Navigated to note:', noteId)
 }
 </script>

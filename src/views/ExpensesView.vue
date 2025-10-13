@@ -30,7 +30,7 @@
         <i class="pi pi-wallet text-6xl text-surface-300 mb-4"></i>
         <p class="text-lg text-surface-600">No expenses yet</p>
         <p class="text-sm text-surface-400 mt-2">
-          Add expenses by typing them in your notes like: $25 - Lunch - Food
+          Add expenses by typing them in your notes like: $25 Lunch [Food]
         </p>
       </div>
 
