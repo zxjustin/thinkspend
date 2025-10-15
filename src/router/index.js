@@ -24,6 +24,12 @@ const routes = [
     name: 'expenses',
     component: ExpensesView,
     meta: { requiresAuth: true }
+  },
+  {
+    path: '/search',
+    name: 'search',
+    component: () => import('@/views/SearchView.vue'),
+    meta: { requiresAuth: true }
   }
 ]
 
