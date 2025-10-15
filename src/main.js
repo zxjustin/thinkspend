@@ -5,6 +5,7 @@ import ConfirmationService from 'primevue/confirmationservice'
 import TooltipDirective from 'primevue/tooltip'
 import Aura from '@primeuix/themes/aura';
 import './style.css'
+import './assets/styles/notion-theme.css'
 import App from './App.vue'
 import router from './router'
 
