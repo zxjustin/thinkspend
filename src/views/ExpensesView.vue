@@ -22,7 +22,64 @@
         <!-- Header -->
         <div class="mb-8">
           <h1 class="text-3xl font-bold notion-text-primary mb-2">All Expenses</h1>
-          <p class="text-sm notion-text-secondary">{{ expenses.length }} expense{{ expenses.length !== 1 ? 's' : '' }} tracked across {{ expensesByMonth.length }} month{{ expensesByMonth.length !== 1 ? 's' : '' }}</p>
+          <p class="text-sm notion-text-secondary">{{ filteredExpenses.length }} expense{{ filteredExpenses.length !== 1 ? 's' : '' }} tracked across {{ expensesByMonth.length }} month{{ expensesByMonth.length !== 1 ? 's' : '' }}</p>
+        </div>
+
+        <!-- Date Filter Section -->
+        <div class="mb-6 notion-bg border rounded-lg p-4" style="border-color: var(--notion-border);">
+          <div class="flex flex-wrap items-center gap-4">
+            <!-- Quick Filter Buttons -->
+            <div class="flex gap-2">
+              <button
+                @click="setQuickFilter('all')"
+                class="px-3 py-1.5 text-sm rounded-md transition-all"
+                :class="dateFilter === 'all' ? 'notion-bg-selected notion-text-primary font-medium' : 'notion-text-secondary hover:notion-bg-hover'"
+              >
+                All Time
+              </button>
+              <button
+                @click="setQuickFilter('thisMonth')"
+                class="px-3 py-1.5 text-sm rounded-md transition-all"
+                :class="dateFilter === 'thisMonth' ? 'notion-bg-selected notion-text-primary font-medium' : 'notion-text-secondary hover:notion-bg-hover'"
+              >
+                This Month
+              </button>
+              <button
+                @click="setQuickFilter('custom')"
+                class="px-3 py-1.5 text-sm rounded-md transition-all"
+                :class="dateFilter === 'custom' ? 'notion-bg-selected notion-text-primary font-medium' : 'notion-text-secondary hover:notion-bg-hover'"
+              >
+                Custom Range
+              </button>
+            </div>
+
+            <!-- Custom Date Range Inputs (shown when custom is selected) -->
+            <div v-if="dateFilter === 'custom'" class="flex items-center gap-2 ml-auto">
+              <div class="flex items-center gap-2">
+                <label class="text-xs notion-text-secondary">From:</label>
+                <input
+                  type="date"
+                  v-model="customStartDate"
+                  class="px-2 py-1 text-sm rounded border notion-bg notion-text-primary"
+                  style="border-color: var(--notion-border);"
+                />
+              </div>
+              <div class="flex items-center gap-2">
+                <label class="text-xs notion-text-secondary">To:</label>
+                <input
+                  type="date"
+                  v-model="customEndDate"
+                  class="px-2 py-1 text-sm rounded border notion-bg notion-text-primary"
+                  style="border-color: var(--notion-border);"
+                />
+              </div>
+            </div>
+
+            <!-- Current Filter Display -->
+            <div v-if="dateFilter !== 'all'" class="ml-auto text-xs notion-text-secondary">
+              {{ getFilterDescription() }}
+            </div>
+          </div>
         </div>
 
         <!-- Total Card (at top for prominence) -->
@@ -106,6 +163,11 @@ import AppLayout from '@/components/common/AppLayout.vue'
 const expensesStore = useExpensesStore()
 const loading = ref(true)
 
+// Date filter state
+const dateFilter = ref('all')
+const customStartDate = ref('')
+const customEndDate = ref('')
+
 // Get unique expenses (remove duplicates based on amount, description, category, date)
 const uniqueExpenses = computed(() => {
   const seen = new Set()
@@ -119,11 +181,42 @@ const uniqueExpenses = computed(() => {
   })
 })
 
-// Group expenses by month
+// Filter expenses by date range
+const filteredExpenses = computed(() => {
+  if (dateFilter.value === 'all') {
+    return uniqueExpenses.value
+  }
+
+  const now = new Date()
+  let startDate, endDate
+
+  switch (dateFilter.value) {
+    case 'thisMonth':
+      startDate = new Date(now.getFullYear(), now.getMonth(), 1)
+      endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0)
+      break
+    case 'custom':
+      if (!customStartDate.value || !customEndDate.value) {
+        return uniqueExpenses.value
+      }
+      startDate = new Date(customStartDate.value)
+      endDate = new Date(customEndDate.value)
+      break
+    default:
+      return uniqueExpenses.value
+  }
+
+  return uniqueExpenses.value.filter(exp => {
+    const expenseDate = new Date(exp.date)
+    return expenseDate >= startDate && expenseDate <= endDate
+  })
+})
+
+// Group expenses by month (using filtered expenses)
 const expensesByMonth = computed(() => {
   const grouped = {}
 
-  uniqueExpenses.value.forEach(expense => {
+  filteredExpenses.value.forEach(expense => {
     const date = new Date(expense.date)
     const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`
     const monthName = date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
@@ -146,11 +239,41 @@ const expensesByMonth = computed(() => {
     .map(([key, data]) => ({ key, ...data }))
 })
 
-const expenses = computed(() => uniqueExpenses.value)
+const expenses = computed(() => filteredExpenses.value)
 
 const totalAmount = computed(() => {
-  return uniqueExpenses.value.reduce((sum, exp) => sum + parseFloat(exp.amount), 0)
+  return filteredExpenses.value.reduce((sum, exp) => sum + parseFloat(exp.amount), 0)
 })
+
+// Quick filter setter
+function setQuickFilter(filter) {
+  dateFilter.value = filter
+
+  // Reset custom dates when switching away from custom
+  if (filter !== 'custom') {
+    customStartDate.value = ''
+    customEndDate.value = ''
+  }
+}
+
+// Get description of current filter
+function getFilterDescription() {
+  const now = new Date()
+
+  switch (dateFilter.value) {
+    case 'thisMonth':
+      return now.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
+    case 'custom':
+      if (customStartDate.value && customEndDate.value) {
+        const start = new Date(customStartDate.value)
+        const end = new Date(customEndDate.value)
+        return `${start.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} - ${end.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`
+      }
+      return 'Select date range'
+    default:
+      return ''
+  }
+}
 
 onMounted(async () => {
   await expensesStore.fetchExpenses()
