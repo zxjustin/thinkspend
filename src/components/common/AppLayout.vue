@@ -1,94 +1,78 @@
 <template>
-  <div class="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50">
+  <div class="min-h-screen">
     <!-- Header -->
-    <header class="bg-white shadow-md border-b border-gray-200">
-      <div class="max-w-7xl mx-auto px-6 py-4">
+    <header class="notion-bg border-b sticky top-0 z-50" style="border-color: var(--notion-border);">
+      <div class="max-w-7xl mx-auto px-8 py-4">
         <div class="flex items-center justify-between">
-          <!--Title -->
+          <!-- Logo & Title - Pure Productivity Focus -->
           <div class="flex items-center gap-3">
-            <div>
-              <h1 class="text-2xl font-bold text-gray-800">ThinkSpend</h1>
+            <div class="w-7 h-7 flex items-center justify-center rounded" style="background-color: var(--notion-text);">
+              <i class="pi pi-chart-line text-white" style="font-size: 14px;"></i>
             </div>
-          </div>
-          
-          <!-- User Menu -->
-          <div class="flex items-center gap-4">
-            <Button 
-              icon="pi pi-bell" 
-              text 
-              rounded
-              severity="secondary"
-            />
-            <Button 
-              icon="pi pi-cog" 
-              text 
-              rounded
-              severity="secondary"
-            />
-            <Avatar 
-              icon="pi pi-user" 
-              class="bg-blue-600 text-white"
-              shape="circle"
-            />
+            <h1 class="text-base font-semibold notion-text-primary">
+              ThinkSpend
+            </h1>
           </div>
         </div>
       </div>
     </header>
 
-    <!-- Navigation Tabs -->
-    <nav class="bg-white border-b border-gray-200 sticky top-0 z-10 shadow-sm">
-      <div class="max-w-7xl mx-auto px-6">
-        <div class="flex gap-1">
+    <!-- Navigation Tabs - Pill Style -->
+    <nav class="notion-bg border-b" style="border-color: var(--notion-border);">
+      <div class="max-w-7xl mx-auto px-8 py-3">
+        <div class="flex gap-2">
+          <!-- Notes Tab -->
           <button
             @click="$router.push('/notes')"
             :class="[
-              'flex items-center gap-2 px-6 py-3 font-medium transition',
+              'flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-medium transition-all duration-200',
               $route.name === 'notes'
-                ? 'text-blue-600 border-b-2 border-blue-600 bg-blue-50'
-                : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
+                ? 'notion-bg-selected notion-text-primary'
+                : 'notion-text-secondary notion-bg-hover'
             ]"
           >
-            <i class="pi pi-file text-lg"></i>
-            Notes
+            <i class="pi pi-file" style="font-size: 13px;"></i>
+            <span>Notes</span>
           </button>
 
+          <!-- Expenses Tab -->
           <button
             @click="$router.push('/expenses')"
             :class="[
-              'flex items-center gap-2 px-6 py-3 font-medium transition',
+              'flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-medium transition-all duration-200',
               $route.name === 'expenses'
-                ? 'text-blue-600 border-b-2 border-blue-600 bg-blue-50'
-                : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
+                ? 'notion-bg-selected notion-text-primary'
+                : 'notion-text-secondary notion-bg-hover'
             ]"
           >
-            <i class="pi pi-dollar text-lg"></i>
-            Expenses
+            <i class="pi pi-dollar" style="font-size: 13px;"></i>
+            <span>Expenses</span>
           </button>
 
+          <!-- Search Tab -->
           <button
             @click="$router.push('/search')"
             :class="[
-              'flex items-center gap-2 px-6 py-3 font-medium transition',
+              'flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-medium transition-all duration-200',
               $route.name === 'search'
-                ? 'text-blue-600 border-b-2 border-blue-600 bg-blue-50'
-                : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
+                ? 'notion-bg-selected notion-text-primary'
+                : 'notion-text-secondary notion-bg-hover'
             ]"
           >
-            <i class="pi pi-search text-lg"></i>
-            Search
+            <i class="pi pi-search" style="font-size: 13px;"></i>
+            <span>Search</span>
           </button>
         </div>
       </div>
     </nav>
 
     <!-- Main Content -->
-    <main class="max-w-7xl mx-auto px-6 py-6">
+    <main class="max-w-7xl mx-auto px-8 py-8">
       <slot />
     </main>
   </div>
 </template>
 
 <script setup>
-import Button from 'primevue/button'
-import Avatar from 'primevue/avatar'
+// No imports needed - using plain HTML buttons
 </script>

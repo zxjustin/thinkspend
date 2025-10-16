@@ -1,25 +1,18 @@
 <template>
   <AppLayout>
-    <div class="max-w-4xl mx-auto py-6">
-      <!-- Page Header -->
-      <div class="mb-6">
-        <h1 class="text-3xl font-bold text-gray-800 mb-2">Search</h1>
-        <p class="text-gray-600">Find notes and expenses using intelligent TF-IDF ranking</p>
-      </div>
-
+    <div class="max-w-3xl mx-auto">
       <!-- Search Bar -->
       <SearchBar
         v-model="searchQuery"
         :is-searching="isSearching"
         @search="handleSearch"
-        class="mb-6"
+        class="mb-8"
       />
 
-      <!-- Performance Stats (optional, for debugging) -->
-      <div v-if="searchQuery && searchDuration > 0" class="mb-4 text-xs text-gray-500">
-        <i class="pi pi-clock"></i>
-        Search completed in {{ searchDuration.toFixed(2) }}ms
-        ({{ notesStore.notes.length }} notes + {{ expensesStore.expenses.length }} expenses = {{ totalDocuments }} documents)
+      <!-- Performance Stats -->
+      <div v-if="searchQuery && searchDuration > 0" class="mb-4 text-xs notion-text-tertiary">
+        <i class="pi pi-clock" style="font-size: 10px;"></i>
+        {{ searchDuration.toFixed(2) }}ms • {{ totalDocuments }} documents
       </div>
 
       <!-- Search Results -->
@@ -30,17 +23,6 @@
         :show-scores="showDebugScores"
         @result-click="handleResultClick"
       />
-
-      <!-- Debug Toggle (can remove in production) -->
-      <div class="mt-8 text-center">
-        <Button
-          :label="showDebugScores ? 'Hide Scores' : 'Show Scores'"
-          text
-          size="small"
-          @click="showDebugScores = !showDebugScores"
-          class="text-xs"
-        />
-      </div>
     </div>
   </AppLayout>
 </template>
@@ -54,7 +36,6 @@ import { useSearch } from '@/composables/useSearch'
 import AppLayout from '@/components/common/AppLayout.vue'
 import SearchBar from '@/components/search/SearchBar.vue'
 import SearchResults from '@/components/search/SearchResults.vue'
-import Button from 'primevue/button'
 
 const router = useRouter()
 const notesStore = useNotesStore()

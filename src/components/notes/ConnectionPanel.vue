@@ -1,132 +1,143 @@
 <template>
-  <div class="bg-white rounded-lg shadow-lg overflow-hidden flex flex-col h-full">
+  <div class="notion-bg border overflow-hidden flex flex-col h-full" style="border-color: var(--notion-border); border-radius: var(--radius-md);">
     <!-- Header -->
-    <div class="flex items-center justify-between p-4 border-b border-gray-200">
-      <h3 class="font-semibold text-gray-800 text-sm">Connections</h3>
-      <Button 
-        icon="pi pi-times" 
-        text 
-        rounded
-        size="small"
+    <div class="flex items-center justify-between px-4 py-3 border-b" style="border-color: var(--notion-border);">
+      <h3 class="text-sm font-medium notion-text-primary">Connections</h3>
+      <button
+        class="notion-button p-1.5 border-0"
         @click="$emit('close')"
-      />
+      >
+        <i class="pi pi-times" style="font-size: 13px;"></i>
+      </button>
     </div>
 
     <!-- Content -->
     <div class="flex-1 overflow-y-auto p-4">
       <!-- Live Detection -->
       <div class="mb-6">
-        <h4 class="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
-          <div class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+        <h4 class="text-sm font-medium notion-text-primary mb-2 flex items-center gap-2">
+          <div class="w-2 h-2 rounded-full animate-pulse" style="background-color: var(--accent-green);"></div>
           Live Detection
         </h4>
-        
+        <p class="text-[10px] notion-text-tertiary mb-3 italic">Real-time scanning as you type</p>
+
         <!-- Detected Expenses -->
         <div class="mb-4">
-          <div class="text-xs text-gray-600 mb-2 flex items-center gap-1">
-            <i class="pi pi-dollar text-xs"></i>
-            Expenses: {{ detectedExpenses.length }}
+          <div class="text-xs notion-text-secondary mb-2 flex items-center justify-between">
+            <span class="flex items-center gap-1">
+              <i class="pi pi-dollar" style="font-size: 10px;"></i>
+              Expenses found
+            </span>
+            <span class="notion-pill notion-pill-green text-[9px]">{{ detectedExpenses.length }}</span>
           </div>
-          
+
           <div v-if="detectedExpenses.length > 0" class="space-y-2">
-            <div 
-              v-for="(exp, idx) in detectedExpenses" 
+            <div
+              v-for="(exp, idx) in detectedExpenses"
               :key="idx"
-              class="bg-green-50 border border-green-200 rounded-lg p-3"
+              class="border rounded p-3"
+              style="background-color: var(--accent-green-bg); border-color: var(--accent-green);"
             >
-              <div class="font-semibold text-green-800 text-sm">${{ exp.amount }}</div>
-              <div class="text-gray-700 text-xs mt-1">{{ exp.description }}</div>
-              <div class="text-gray-500 text-[10px] mt-1">{{ exp.category }}</div>
+              <div class="font-semibold text-sm" style="color: var(--accent-green);">${{ exp.amount }}</div>
+              <div class="notion-text-primary text-xs mt-1">{{ exp.description }}</div>
+              <div class="notion-text-tertiary text-[10px] mt-1">{{ exp.category }}</div>
             </div>
           </div>
-          <div v-else class="text-xs text-gray-400 italic">None detected</div>
+          <div v-else class="text-xs notion-text-tertiary italic">None detected</div>
         </div>
 
         <!-- Detected Links -->
         <div>
-          <div class="text-xs text-gray-600 mb-2 flex items-center gap-1">
-            <i class="pi pi-link text-xs"></i>
-            Links: {{ detectedLinks.length }}
+          <div class="text-xs notion-text-secondary mb-2 flex items-center justify-between">
+            <span class="flex items-center gap-1">
+              <i class="pi pi-link" style="font-size: 10px;"></i>
+              Links found
+            </span>
+            <span class="notion-pill notion-pill-purple text-[9px]">{{ detectedLinks.length }}</span>
           </div>
-          
+
           <div v-if="detectedLinks.length > 0" class="space-y-1">
-            <div 
-              v-for="(link, idx) in detectedLinks" 
+            <div
+              v-for="(link, idx) in detectedLinks"
               :key="idx"
-              class="bg-blue-50 border border-blue-200 rounded-lg p-2"
+              class="border rounded p-2"
+              style="background-color: var(--accent-purple-bg); border-color: var(--accent-purple);"
             >
-              <div class="font-semibold text-blue-800 text-xs">→ {{ link }}</div>
-              <div class="text-[10px] text-gray-500 mt-0.5">Bidirectional link</div>
+              <div class="font-medium text-xs" style="color: var(--accent-purple);">→ {{ link }}</div>
+              <div class="text-[10px] notion-text-tertiary mt-0.5">Bidirectional link</div>
             </div>
           </div>
-          <div v-else class="text-xs text-gray-400 italic">None detected</div>
+          <div v-else class="text-xs notion-text-tertiary italic">None detected</div>
         </div>
       </div>
 
-      <!-- Connected Items -->
-      <div class="pt-4 border-t border-gray-200">
-        <h4 class="text-sm font-semibold text-gray-700 mb-3">Connected Items</h4>
+      <!-- Connected Items for THIS NOTE ONLY -->
+      <div class="pt-4 border-t" style="border-color: var(--notion-border);">
+        <h4 class="text-sm font-medium notion-text-primary mb-2">Connected to This Note</h4>
+        <p class="text-[10px] notion-text-tertiary mb-3 italic">Items linked to "{{ currentNote?.title || 'this note' }}" only</p>
 
         <!-- Connected Expenses -->
         <div class="mb-4">
-          <div class="text-xs font-medium text-gray-600 mb-2">
-            Expenses ({{ connectedExpenses.length }})
+          <div class="text-xs font-medium notion-text-secondary mb-2 flex items-center justify-between">
+            <span>Expenses in this note</span>
+            <span class="notion-pill text-[9px]">{{ connectedExpenses.length }}</span>
           </div>
 
           <div v-if="connectedExpenses.length > 0" class="space-y-2">
             <div
               v-for="exp in connectedExpenses"
               :key="exp.id"
-              class="bg-gray-50 border border-gray-200 rounded-lg p-3"
+              class="notion-bg-hover border rounded p-3"
+              style="border-color: var(--notion-border);"
             >
               <div class="flex items-center justify-between mb-1">
-                <div class="text-xs font-semibold text-gray-800">${{ exp.amount }}</div>
-                <Tag
-                  :value="exp.detection_method"
-                  severity="info"
-                  class="text-[10px] px-2 py-0.5"
-                />
+                <div class="text-xs font-semibold notion-text-primary">${{ exp.amount }}</div>
+                <span class="notion-pill text-[10px]">{{ exp.detection_method }}</span>
               </div>
-              <div class="text-xs text-gray-700">{{ exp.description }}</div>
-              <div class="text-[10px] text-gray-500 mt-1">
+              <div class="text-xs notion-text-primary">{{ exp.description }}</div>
+              <div class="text-[10px] notion-text-tertiary mt-1">
                 {{ exp.category }} • {{ formatDate(exp.date) }}
               </div>
             </div>
           </div>
-          <div v-else class="text-xs text-gray-400 italic">No expenses linked</div>
+          <div v-else class="text-xs notion-text-tertiary italic">No expenses linked</div>
         </div>
 
         <!-- Backlinks (Bidirectional) -->
         <div class="mb-4">
-          <div class="text-xs font-medium text-gray-600 mb-2 flex items-center gap-1">
-            <i class="pi pi-arrow-left text-xs"></i>
-            Backlinks ({{ backlinks.length }})
+          <div class="text-xs font-medium notion-text-secondary mb-2 flex items-center justify-between">
+            <span class="flex items-center gap-1">
+              <i class="pi pi-arrow-left" style="font-size: 10px;"></i>
+              Notes linking here
+            </span>
+            <span class="notion-pill text-[9px]">{{ backlinks.length }}</span>
           </div>
 
           <div v-if="backlinks.length > 0" class="space-y-1">
             <div
               v-for="link in backlinks"
               :key="link.id"
-              class="bg-purple-50 border border-purple-200 rounded-lg p-2 cursor-pointer hover:bg-purple-100 transition-colors"
+              class="border rounded p-2 cursor-pointer transition-colors"
+              style="background-color: var(--accent-blue-bg); border-color: var(--accent-blue);"
               @click="navigateToNote(link.source.id)"
             >
               <div class="flex items-center gap-2">
-                <i class="pi pi-file text-purple-600 text-xs"></i>
-                <div class="font-semibold text-purple-800 text-xs">{{ link.source.title }}</div>
+                <i class="pi pi-file" style="font-size: 10px; color: var(--accent-blue);"></i>
+                <div class="font-medium text-xs" style="color: var(--accent-blue);">{{ link.source.title }}</div>
               </div>
-              <div class="text-[10px] text-purple-600 mt-0.5">
+              <div class="text-[10px] notion-text-tertiary mt-0.5">
                 ← Links to this note
               </div>
             </div>
           </div>
-          <div v-else class="text-xs text-gray-400 italic">No notes link here</div>
+          <div v-else class="text-xs notion-text-tertiary italic">No notes link here</div>
         </div>
       </div>
 
       <!-- Info Box -->
-      <div class="mt-4 p-3 bg-purple-50 border border-purple-200 rounded-lg">
-        <div class="font-semibold text-purple-800 text-xs mb-1">🎯 Auto-Linking</div>
-        <div class="text-purple-700 text-[11px] leading-relaxed">
+      <div class="mt-4 p-3 notion-bg-hover border rounded" style="border-color: var(--notion-border);">
+        <div class="font-medium notion-text-primary text-xs mb-1">Auto-Linking</div>
+        <div class="notion-text-secondary text-[11px]" style="line-height: 1.5;">
           Expenses typed in notes are automatically detected and linked. This preserves context!
         </div>
       </div>
@@ -138,8 +149,6 @@
 import { ref, computed, watch } from 'vue'
 import { useNotesStore } from '@/stores/notes'
 import { useExpensesStore } from '@/stores/expenses'
-import Button from 'primevue/button'
-import Tag from 'primevue/tag'
 
 defineEmits(['close'])
 

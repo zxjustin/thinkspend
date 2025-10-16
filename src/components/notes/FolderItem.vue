@@ -1,55 +1,53 @@
 <template>
   <div>
     <!-- Folder Row -->
-    <div 
-      class="group flex items-center gap-2 px-3 py-2 rounded cursor-pointer hover:bg-gray-100 transition-colors"
-      :style="{ paddingLeft: `${depth * 16 + 12}px` }"
+    <div
+      class="group flex items-center gap-2 px-2 py-1.5 rounded cursor-pointer notion-bg-hover transition-all duration-200"
+      :style="{ paddingLeft: `${depth * 12 + 8}px` }"
       @click="toggleExpanded"
     >
       <!-- Expand Icon -->
-      <i 
+      <i
         v-if="hasChildren"
         :class="isExpanded ? 'pi pi-chevron-down' : 'pi pi-chevron-right'"
-        class="text-xs text-gray-600"
+        class="notion-text-tertiary transition-transform duration-200"
+        style="font-size: 10px;"
       ></i>
-      <div v-else class="w-3"></div>
-      
+      <div v-else style="width: 10px;"></div>
+
       <!-- Folder Icon -->
-      <i 
+      <i
         :class="isExpanded ? 'pi pi-folder-open' : 'pi pi-folder'"
-        class="text-blue-600"
+        class="notion-text-secondary"
+        style="font-size: 13px;"
       ></i>
-      
+
       <!-- Folder Name -->
-      <span class="text-sm font-medium text-gray-700 flex-1">{{ folder.name }}</span>
+      <span class="text-sm font-medium notion-text-primary flex-1 truncate">{{ folder.name }}</span>
 
       <!-- Action Buttons -->
-      <div class="flex gap-1 opacity-0 group-hover:opacity-100">
-        <Button
-          icon="pi pi-plus"
-          text
-          rounded
-          size="small"
+      <div class="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+        <button
           @click.stop="createNote"
           v-tooltip.top="'New Note'"
-          severity="success"
-        />
-        <Button
-          icon="pi pi-trash"
-          text
-          rounded
-          size="small"
+          class="notion-button p-1 border-0"
+        >
+          <i class="pi pi-plus" style="font-size: 11px;"></i>
+        </button>
+        <button
           @click.stop="confirmDeleteFolder"
           v-tooltip.top="'Delete Folder'"
-          severity="danger"
-        />
+          class="notion-button p-1 border-0 hover:bg-red-50"
+        >
+          <i class="pi pi-trash notion-text-secondary" style="font-size: 11px;"></i>
+        </button>
       </div>
     </div>
 
     <!-- Child Folders (Recursive) -->
     <div v-if="isExpanded && hasChildren">
-      <FolderTree 
-        :folders="childFolders" 
+      <FolderTree
+        :folders="childFolders"
         :depth="depth + 1"
       />
     </div>
@@ -59,42 +57,39 @@
       <div
         v-for="note in folderNotes"
         :key="note.id"
-        class="group/note flex items-center gap-2 px-3 py-2 rounded cursor-pointer hover:bg-blue-50 transition-colors"
+        class="group/note flex items-center gap-2 px-2 py-2 mb-0.5 rounded cursor-pointer notion-bg-hover transition-all duration-200"
         :class="{
-          'bg-blue-100 border-l-2 border-blue-600': isSelected(note.id)
+          'notion-bg-selected': isSelected(note.id)
         }"
-        :style="{ paddingLeft: `${(depth + 1) * 16 + 12}px` }"
+        :style="{ paddingLeft: `${(depth + 1) * 12 + 8}px` }"
         @click="selectNote(note)"
       >
-        <i class="pi pi-file text-xs text-gray-500"></i>
+        <i class="pi pi-file notion-text-tertiary" style="font-size: 11px;"></i>
         <div class="flex-1 min-w-0">
-          <div class="text-sm text-gray-800 truncate">{{ note.title }}</div>
+          <div class="text-sm notion-text-primary truncate">{{ note.title }}</div>
 
-          <!-- Connection Badges -->
+          <!-- Connection Badges - Colored Pills for Vibrancy -->
           <div v-if="noteConnections(note.id).expenses > 0 || noteConnections(note.id).links > 0"
-               class="flex gap-2 text-xs text-gray-500 mt-0.5">
-            <span v-if="noteConnections(note.id).expenses > 0" class="flex items-center gap-0.5">
-              <i class="pi pi-dollar text-[10px]"></i>
-              {{ noteConnections(note.id).expenses }}
+               class="flex gap-1.5 mt-1">
+            <span v-if="noteConnections(note.id).expenses > 0" class="notion-pill notion-pill-green">
+              <i class="pi pi-dollar" style="font-size: 9px;"></i>
+              <span>{{ noteConnections(note.id).expenses }}</span>
             </span>
-            <span v-if="noteConnections(note.id).links > 0" class="flex items-center gap-0.5">
-              <i class="pi pi-link text-[10px]"></i>
-              {{ noteConnections(note.id).links }}
+            <span v-if="noteConnections(note.id).links > 0" class="notion-pill notion-pill-purple">
+              <i class="pi pi-link" style="font-size: 9px;"></i>
+              <span>{{ noteConnections(note.id).links }}</span>
             </span>
           </div>
         </div>
 
         <!-- Delete Note Button -->
-        <Button
-          icon="pi pi-trash"
-          text
-          rounded
-          size="small"
-          class="opacity-0 group-hover/note:opacity-100"
+        <button
           @click.stop="confirmDeleteNote(note.id)"
           v-tooltip.top="'Delete Note'"
-          severity="danger"
-        />
+          class="opacity-0 group-hover/note:opacity-100 notion-button p-1 border-0 hover:bg-red-50 transition-all duration-200"
+        >
+          <i class="pi pi-trash notion-text-secondary" style="font-size: 11px;"></i>
+        </button>
       </div>
     </div>
   </div>
@@ -105,7 +100,6 @@ import { ref, computed } from 'vue'
 import { useNotesStore } from '@/stores/notes'
 import { useExpensesStore } from '@/stores/expenses'
 import { useConfirm } from 'primevue/useconfirm'
-import Button from 'primevue/button'
 import FolderTree from './FolderTree.vue'
 
 const props = defineProps({

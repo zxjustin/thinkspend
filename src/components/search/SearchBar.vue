@@ -1,45 +1,38 @@
 <template>
   <div class="search-bar">
-    <div class="flex items-center gap-2 bg-white rounded-lg shadow-sm border border-gray-200 px-4 py-3">
+    <!-- Large Professional Search Bar -->
+    <div class="flex items-center gap-3 notion-bg border rounded-lg px-6 py-4" style="border-color: var(--notion-border); box-shadow: var(--shadow-sm);">
       <!-- Search Icon -->
-      <i class="pi pi-search text-gray-400"></i>
+      <i class="pi pi-search notion-text-tertiary" style="font-size: 20px;"></i>
 
       <!-- Search Input -->
       <input
         v-model="localQuery"
         type="text"
-        placeholder="Search notes and expenses..."
-        class="flex-1 outline-none text-gray-700 placeholder-gray-400"
+        placeholder="Search across all notes and expenses..."
+        class="flex-1 outline-none notion-text-primary"
+        style="font-size: 18px; background: transparent;"
         @input="handleInput"
         @keydown.enter="handleEnter"
       />
 
       <!-- Clear Button (only show when there's text) -->
-      <Button
+      <button
         v-if="localQuery"
-        icon="pi pi-times"
-        text
-        rounded
-        size="small"
+        class="notion-button p-2 border-0"
         @click="clearSearch"
-        v-tooltip.top="'Clear search'"
-      />
+      >
+        <i class="pi pi-times" style="font-size: 14px;"></i>
+      </button>
 
       <!-- Loading Indicator -->
-      <i v-if="isSearching" class="pi pi-spin pi-spinner text-blue-500"></i>
-    </div>
-
-    <!-- Search Tips -->
-    <div class="mt-2 text-xs text-gray-500 flex items-center gap-2">
-      <i class="pi pi-info-circle"></i>
-      <span>Tip: Search across notes and expenses. Multiple words = AND search.</span>
+      <i v-if="isSearching" class="pi pi-spin pi-spinner" style="font-size: 16px; color: var(--accent-blue);"></i>
     </div>
   </div>
 </template>
 
 <script setup>
 import { ref, watch } from 'vue'
-import Button from 'primevue/button'
 
 const props = defineProps({
   modelValue: {

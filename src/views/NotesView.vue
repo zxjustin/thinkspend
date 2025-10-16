@@ -1,16 +1,17 @@
 <template>
   <AppLayout>
     <!-- Toggle Graph Button -->
-    <div class="mb-4 flex items-center justify-between">
-      <div class="flex gap-2">
-        <Button
-          :icon="showGraphView ? 'pi pi-times' : 'pi pi-sitemap'"
-          :label="showGraphView ? 'Close Graph' : 'Show Knowledge Graph'"
-          @click="showGraphView = !showGraphView"
-          :severity="showGraphView ? 'secondary' : 'info'"
-          size="small"
-        />
-      </div>
+    <div class="mb-6 flex items-center gap-2">
+      <button
+        @click="showGraphView = !showGraphView"
+        :class="[
+          'notion-button text-sm',
+          showGraphView ? 'notion-bg-selected' : ''
+        ]"
+      >
+        <i :class="showGraphView ? 'pi pi-times' : 'pi pi-sitemap'" style="font-size: 13px;"></i>
+        <span>{{ showGraphView ? 'Close Graph' : 'Knowledge Graph' }}</span>
+      </button>
     </div>
 
     <div class="flex gap-4 h-[calc(100vh-250px)]">
@@ -46,7 +47,6 @@ import NoteSidebar from '@/components/notes/NoteSidebar.vue'
 import NoteEditor from '@/components/notes/NoteEditor.vue'
 import ConnectionPanel from '@/components/notes/ConnectionPanel.vue'
 import GraphView from '@/components/notes/GraphView.vue'
-import Button from 'primevue/button'
 
 const notesStore = useNotesStore()
 const showConnectionPanel = ref(true)

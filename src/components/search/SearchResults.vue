@@ -1,86 +1,89 @@
 <template>
   <div class="search-results">
     <!-- Results Header -->
-    <div v-if="results.length > 0" class="mb-4 text-sm text-gray-600">
-      Found <strong>{{ results.length }}</strong> result{{ results.length !== 1 ? 's' : '' }} for <strong>"{{ query }}"</strong>
+    <div v-if="results.length > 0" class="mb-6">
+      <h2 class="text-2xl font-bold notion-text-primary mb-1">Search Results</h2>
+      <p class="text-sm notion-text-secondary">Found {{ results.length }} result{{ results.length !== 1 ? 's' : '' }} for "{{ query }}"</p>
     </div>
 
     <!-- No Results -->
-    <div v-if="!isSearching && query && results.length === 0" class="text-center py-12">
-      <i class="pi pi-search text-6xl text-gray-300 mb-4"></i>
-      <p class="text-gray-500 text-lg">No results found</p>
-      <p class="text-gray-400 text-sm mt-2">Try different keywords or check spelling</p>
+    <div v-if="!isSearching && query && results.length === 0" class="text-center py-16">
+      <div class="w-20 h-20 rounded-lg flex items-center justify-center mx-auto mb-4" style="background-color: var(--notion-bg-secondary);">
+        <i class="pi pi-search notion-text-tertiary" style="font-size: 40px;"></i>
+      </div>
+      <p class="text-base font-medium notion-text-primary mb-2">No results found</p>
+      <p class="text-sm notion-text-secondary">Try different keywords or check spelling</p>
     </div>
 
     <!-- Empty State (no search yet) -->
-    <div v-if="!query && results.length === 0" class="text-center py-12">
-      <i class="pi pi-search text-6xl text-gray-300 mb-4"></i>
-      <p class="text-gray-500 text-lg">Start searching</p>
-      <p class="text-gray-400 text-sm mt-2">Search across all your notes and expenses</p>
+    <div v-if="!query && results.length === 0" class="text-center py-16">
+      <div class="w-20 h-20 rounded-lg flex items-center justify-center mx-auto mb-4" style="background-color: var(--notion-bg-secondary);">
+        <i class="pi pi-search notion-text-tertiary" style="font-size: 40px;"></i>
+      </div>
+      <p class="text-base font-medium notion-text-primary mb-2">Start searching</p>
+      <p class="text-sm notion-text-secondary">Search across all your notes and expenses</p>
     </div>
 
-    <!-- Results List -->
+    <!-- Results List - Professional Cards -->
     <div v-if="results.length > 0" class="space-y-3">
       <div
         v-for="result in results"
         :key="`${result.type}-${result.id}`"
-        class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 hover:shadow-md hover:border-blue-300 transition-all cursor-pointer"
+        class="notion-bg border rounded-lg p-5 hover:notion-bg-hover transition-all cursor-pointer"
+        style="border-color: var(--notion-border);"
         @click="handleResultClick(result)"
       >
         <!-- Result Header -->
-        <div class="flex items-start justify-between mb-2">
-          <div class="flex items-center gap-2 flex-1">
+        <div class="flex items-start justify-between mb-3">
+          <div class="flex items-center gap-3 flex-1">
             <!-- Type Icon -->
-            <i
-              :class="result.type === 'note' ? 'pi pi-file text-blue-500' : 'pi pi-dollar text-green-500'"
-              class="text-sm"
-            ></i>
+            <div class="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0"
+                 :style="{ backgroundColor: result.type === 'note' ? 'var(--accent-blue-bg)' : 'var(--accent-green-bg)' }">
+              <i
+                :class="result.type === 'note' ? 'pi pi-file' : 'pi pi-dollar'"
+                :style="{ fontSize: '18px', color: result.type === 'note' ? 'var(--accent-blue)' : 'var(--accent-green)' }"
+              ></i>
+            </div>
 
             <!-- Title with highlighting -->
-            <h3
-              class="text-base font-semibold text-gray-800"
-              v-html="highlightTerms(result.title, searchTerms)"
-            ></h3>
+            <div class="flex-1 min-w-0">
+              <h3
+                class="text-lg font-semibold notion-text-primary mb-1"
+                v-html="highlightTerms(result.title, searchTerms)"
+              ></h3>
+              <span
+                :class="result.type === 'note' ? 'notion-pill-blue' : 'notion-pill-green'"
+                class="notion-pill text-xs"
+              >
+                {{ result.type === 'note' ? 'Note' : 'Expense' }}
+              </span>
+            </div>
           </div>
 
-          <!-- Type Badge -->
-          <span
-            :class="result.type === 'note' ? 'bg-blue-100 text-blue-700' : 'bg-green-100 text-green-700'"
-            class="text-xs px-2 py-1 rounded-full font-medium"
-          >
-            {{ result.type === 'note' ? 'Note' : 'Expense' }}
-          </span>
+          <!-- Expense Amount -->
+          <div v-if="result.type === 'expense'" class="text-right">
+            <div class="text-2xl font-bold" style="color: var(--accent-green);">${{ result.amount.toFixed(2) }}</div>
+          </div>
         </div>
 
         <!-- Excerpt with highlighting -->
         <p
-          class="text-sm text-gray-600 mb-2 line-clamp-2"
+          class="text-sm notion-text-secondary mb-3 line-clamp-2"
           v-html="highlightTerms(getExcerpt(result.content, searchTerms), searchTerms)"
         ></p>
 
         <!-- Metadata Row -->
-        <div class="flex items-center gap-3 text-xs text-gray-500">
+        <div class="flex items-center gap-4 text-xs notion-text-tertiary">
           <!-- Date -->
-          <span class="flex items-center gap-1">
-            <i class="pi pi-calendar text-[10px]"></i>
+          <span class="flex items-center gap-1.5">
+            <i class="pi pi-calendar" style="font-size: 10px;"></i>
             {{ formatDate(result.created_at) }}
           </span>
 
           <!-- Matched Terms -->
-          <span class="flex items-center gap-1">
-            <i class="pi pi-check-circle text-[10px]"></i>
-            {{ result.matchedTerms.length }} term{{ result.matchedTerms.length !== 1 ? 's' : '' }} matched
-          </span>
-
-          <!-- Score (for debugging/transparency) -->
-          <span v-if="showScores" class="flex items-center gap-1 text-purple-600">
-            <i class="pi pi-star-fill text-[10px]"></i>
-            Score: {{ result.score.toFixed(3) }}
-          </span>
-
-          <!-- Expense Amount -->
-          <span v-if="result.type === 'expense'" class="flex items-center gap-1 font-semibold text-green-600">
-            ${{ result.amount.toFixed(2) }}
+          <span class="flex items-center gap-1.5">
+            <i class="pi pi-check-circle" style="font-size: 10px;"></i>
+            {{ result.matchedTerms.length }} match{{ result.matchedTerms.length !== 1 ? 'es' : '' }}
           </span>
         </div>
       </div>
