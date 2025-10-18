@@ -35,16 +35,14 @@ export const WikiLink = Mark.create({
         props: {
           handleDOMEvents: {
             click: (view, event) => {
-              console.log('👆 Click detected in editor')
-
-              // Check if clicked element has wiki-link class
               const target = event.target
 
+              // Check if clicked element has wiki-link class
               if (target && target.classList && target.classList.contains('wiki-link-text')) {
                 const linkTitle = target.getAttribute('data-link-title')
 
                 if (linkTitle && onLinkClick) {
-                  console.log('🔗 Clicked wiki link (DOM):', linkTitle)
+                  console.log('🔗 Clicked wiki link:', linkTitle)
                   onLinkClick(linkTitle)
                   event.preventDefault()
                   event.stopPropagation()
