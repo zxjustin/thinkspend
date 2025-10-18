@@ -55,71 +55,105 @@
       </div>
 
       <!-- Content Editor -->
-      <div class="flex-1 overflow-y-auto p-6">
-        <!-- TipTap Editor - Clean, No Toolbar -->
-        <EditorContent :editor="editor" class="tiptap-editor" />
+      <div class="flex-1 overflow-y-auto px-8 py-6">
+        <!-- TipTap Editor -->
+        <EditorContent
+          :editor="editor"
+          class="min-h-[400px] border border-gray-200 rounded-lg p-6 text-base leading-relaxed bg-white transition-all duration-200 focus-within:border-blue-400 focus-within:shadow-[0_0_0_3px_rgba(59,130,246,0.1)] outline-none tiptap-editor"
+        />
 
-        <!-- Syntax Help - Collapsible -->
-        <div class="mt-4 space-y-2">
-          <!-- Expense Detection - Collapsible -->
-          <div class="border rounded" style="border-color: var(--accent-green);">
-            <button
-              @click="showExpenseHelp = !showExpenseHelp"
-              class="w-full px-4 py-2 flex items-center justify-between hover:bg-gray-50 transition-colors"
-              style="background-color: var(--accent-green-bg);"
-            >
-              <div class="flex items-center gap-2">
-                <i class="pi pi-dollar" style="font-size: 12px; color: var(--accent-green);"></i>
-                <span class="text-sm font-medium" style="color: var(--accent-green);">Expense Tracking</span>
-              </div>
-              <i :class="showExpenseHelp ? 'pi pi-chevron-up' : 'pi pi-chevron-down'" style="font-size: 10px; color: var(--accent-green);"></i>
-            </button>
-            <div v-if="showExpenseHelp" class="px-4 py-3 border-t" style="border-color: var(--accent-green); background-color: var(--accent-green-bg);">
-              <div class="space-y-2 text-sm notion-text-secondary">
-                <div>
-                  <span class="font-medium">Format:</span>
-                  <code class="px-2 py-0.5 rounded ml-1 text-xs" style="background-color: var(--notion-bg-selected);">$25 Lunch [Food]</code>
+        <!-- Tips & Help - PrimeVue Accordion -->
+        <div class="mt-6">
+          <h3 class="text-lg font-semibold mb-4 notion-text-primary">💡 Tips & Help</h3>
+          <Accordion class="notion-accordion">
+            <!-- Expense Tracking Tip -->
+            <AccordionPanel value="0">
+              <AccordionHeader>
+                <div class="flex items-center gap-2">
+                  <i class="pi pi-dollar" style="font-size: 14px; color: var(--accent-green);"></i>
+                  <span class="font-medium" style="color: var(--accent-green);">Expense Tracking</span>
                 </div>
-              </div>
-              <p class="text-xs notion-text-tertiary mt-2">
-                Categories: {{ VALID_CATEGORIES.join(', ') }}
-              </p>
-            </div>
-          </div>
+              </AccordionHeader>
+              <AccordionContent>
+                <div class="space-y-3 text-sm notion-text-secondary">
+                  <div>
+                    <span class="font-medium">Format:</span>
+                    <code class="px-2 py-0.5 rounded ml-1 text-xs" style="background-color: var(--notion-bg-selected);">$25 Lunch [Food]</code>
+                  </div>
 
-          <!-- Org-Mode Headers - Collapsible -->
-          <div class="border rounded" style="border-color: var(--accent-purple);">
-            <button
-              @click="showOrgModeHelp = !showOrgModeHelp"
-              class="w-full px-4 py-2 flex items-center justify-between hover:bg-gray-50 transition-colors"
-              style="background-color: var(--accent-purple-bg);"
-            >
-              <div class="flex items-center gap-2">
-                <i class="pi pi-align-left" style="font-size: 12px; color: var(--accent-purple);"></i>
-                <span class="text-sm font-medium" style="color: var(--accent-purple);">Org-Mode Headers (Click or Ctrl+Enter)</span>
-              </div>
-              <i :class="showOrgModeHelp ? 'pi pi-chevron-up' : 'pi pi-chevron-down'" style="font-size: 10px; color: var(--accent-purple);"></i>
-            </button>
-            <div v-if="showOrgModeHelp" class="px-4 py-3 border-t" style="border-color: var(--accent-purple); background-color: var(--accent-purple-bg);">
-              <div class="space-y-1 text-xs notion-text-secondary">
-                <div class="flex items-center gap-2">
-                  <code class="px-2 py-0.5 rounded font-mono text-xs" style="background-color: var(--notion-bg-selected);">*</code>
-                  <span>+ <kbd class="bg-white px-1 rounded border text-xs">Space</kbd> → H1 Blue</span>
+                  <!-- Date Override Option -->
+                  <div class="pt-2 border-t" style="border-color: var(--accent-green);">
+                    <label class="flex items-center gap-2 mb-2">
+                      <input
+                        type="checkbox"
+                        v-model="useCustomExpenseDate"
+                        class="rounded border-gray-300"
+                        style="color: var(--accent-green);"
+                      />
+                      <span class="text-xs font-medium">Use custom date for expenses</span>
+                    </label>
+                    <div v-if="useCustomExpenseDate" class="flex items-center gap-2">
+                      <input
+                        type="date"
+                        v-model="customExpenseDate"
+                        class="px-2 py-1 text-xs rounded border notion-bg notion-text-primary"
+                        style="border-color: var(--accent-green);"
+                      />
+                      <button
+                        @click="customExpenseDate = new Date().toISOString().split('T')[0]"
+                        class="px-2 py-1 text-xs rounded hover:bg-gray-100 transition-colors notion-text-secondary"
+                        title="Set to today"
+                      >
+                        Today
+                      </button>
+                    </div>
+                    <p class="text-xs notion-text-tertiary mt-1">
+                      {{ useCustomExpenseDate ? 'Expenses will use: ' + formatExpenseDate(customExpenseDate) : 'Expenses will use the note creation date' }}
+                    </p>
+                  </div>
+
+                  <p class="text-xs notion-text-tertiary pt-2 border-t" style="border-color: var(--accent-green);">
+                    <span class="font-medium">Categories:</span> {{ VALID_CATEGORIES.join(', ') }}
+                  </p>
                 </div>
+              </AccordionContent>
+            </AccordionPanel>
+
+            <!-- Org-Mode Headers Tip -->
+            <AccordionPanel value="1">
+              <AccordionHeader>
                 <div class="flex items-center gap-2">
-                  <code class="px-2 py-0.5 rounded font-mono text-xs" style="background-color: var(--notion-bg-selected);">**</code>
-                  <span>+ <kbd class="bg-white px-1 rounded border text-xs">Space</kbd> → H2 Green</span>
+                  <i class="pi pi-align-left" style="font-size: 14px; color: var(--accent-purple);"></i>
+                  <span class="font-medium" style="color: var(--accent-purple);">Org-Mode Headers</span>
                 </div>
-                <div class="flex items-center gap-2">
-                  <code class="px-2 py-0.5 rounded font-mono text-xs" style="background-color: var(--notion-bg-selected);">***</code>
-                  <span>+ <kbd class="bg-white px-1 rounded border text-xs">Space</kbd> → H3 Pink</span>
+              </AccordionHeader>
+              <AccordionContent>
+                <div class="space-y-1 text-xs notion-text-secondary">
+                  <div class="flex items-center gap-2">
+                    <code class="px-2 py-0.5 rounded font-mono text-xs" style="background-color: var(--notion-bg-selected);">*</code>
+                    <span>+ <kbd class="bg-white px-1 rounded border text-xs">Space</kbd> → H1 Blue</span>
+                  </div>
+                  <div class="flex items-center gap-2">
+                    <code class="px-2 py-0.5 rounded font-mono text-xs" style="background-color: var(--notion-bg-selected);">**</code>
+                    <span>+ <kbd class="bg-white px-1 rounded border text-xs">Space</kbd> → H2 Green</span>
+                  </div>
+                  <div class="flex items-center gap-2">
+                    <code class="px-2 py-0.5 rounded font-mono text-xs" style="background-color: var(--notion-bg-selected);">***</code>
+                    <span>+ <kbd class="bg-white px-1 rounded border text-xs">Space</kbd> → H3 Pink</span>
+                  </div>
                 </div>
-              </div>
-              <p class="text-xs notion-text-tertiary mt-2">
-                💡 Click headers or press <kbd class="bg-white px-1 rounded border text-xs">Ctrl+Enter</kbd> to collapse/expand
-              </p>
-            </div>
-          </div>
+                <div class="mt-3 pt-3 border-t" style="border-color: var(--accent-purple);">
+                  <p class="text-xs font-medium notion-text-secondary mb-2">Hierarchical Organization:</p>
+                  <div class="text-xs notion-text-tertiary space-y-1">
+                    <div>🎯 <strong>Visual Hierarchy:</strong> Headers are color-coded by level</div>
+                    <div>📂 H2s nest under H1s, H3s under H2s (shown by indentation)</div>
+                    <div>⌨️ Keyboard-first: Type * + Space to create headers</div>
+                    <div>✨ Organize your notes with structured sections!</div>
+                  </div>
+                </div>
+              </AccordionContent>
+            </AccordionPanel>
+          </Accordion>
         </div>
       </div>
     </div>
@@ -141,6 +175,10 @@ import { useExpenseParser } from '@/composables/useExpenseParser'
 import { useLinkDetector } from '@/composables/useLinkDetector'
 import WikiLink from './WikiLinkExtension'
 import InputText from 'primevue/inputtext'
+import Accordion from 'primevue/accordion'
+import AccordionPanel from 'primevue/accordionpanel'
+import AccordionHeader from 'primevue/accordionheader'
+import AccordionContent from 'primevue/accordioncontent'
 
 const notesStore = useNotesStore()
 const expensesStore = useExpensesStore()
@@ -152,9 +190,9 @@ const content = ref('')
 const saveStatus = ref('saved')
 const detectedExpenses = ref([])
 const processedExpenses = ref(new Set())
-const processedLinks = ref(new Set()) // Track which links we've already stored
-const showExpenseHelp = ref(false) // Collapsible help section
-const showOrgModeHelp = ref(false) // Collapsible help section
+const processedLinks = ref(new Set())
+const useCustomExpenseDate = ref(false)
+const customExpenseDate = ref(new Date().toISOString().split('T')[0])
 
 const currentNote = computed(() => notesStore.currentNote)
 
@@ -169,52 +207,44 @@ const OrgMode = Extension.create({
         const { selection } = state
         const { $from } = selection
 
-        // Get current line text
         const textBefore = $from.parent.textContent
-
         console.log('🔍 Space pressed, line text:', JSON.stringify(textBefore))
 
-        // Count asterisks at start
         const match = textBefore.match(/^(\*{1,6})$/)
 
         if (match) {
           const level = match[1].length
           console.log('✅ Converting to H' + level)
 
-          // Delete the asterisks
           editor
             .chain()
             .deleteRange({ from: $from.pos - level, to: $from.pos })
             .setHeading({ level })
             .run()
 
-          return true // Prevent default space
+          return true
         }
 
-        return false // Allow default space
+        return false
       },
 
-      // Ctrl+Enter to fold/unfold headers (org-mode style, avoids Windows Tab conflict)
-      'Mod-Enter': ({ editor }) => {
-        const { state, view } = editor
+      'Enter': ({ editor }) => {
+        const { state } = editor
         const { selection } = state
         const { $from } = selection
 
-        // Check if we're in a heading
         if ($from.parent.type.name.startsWith('heading')) {
-          const headingEl = view.domAtPos($from.pos).node
-          if (headingEl && headingEl.nodeName.match(/^H[1-6]$/)) {
-            // Toggle collapsed class
-            const header = headingEl.closest('h1, h2, h3, h4, h5, h6')
-            if (header) {
-              header.classList.toggle('org-folded')
-              console.log('📂 Toggled fold on header with Ctrl+Enter')
-              return true
-            }
-          }
+          console.log('↩️ Enter pressed in header, creating indented content')
+
+          editor.chain().insertContentAt($from.pos + 1, '<p></p>').run()
+
+          const newPos = $from.pos + 2
+          editor.commands.setTextSelection(newPos)
+
+          return true
         }
 
-        return false // Allow default behavior if not on a header
+        return false
       }
     }
   }
@@ -224,16 +254,13 @@ const OrgMode = Extension.create({
 async function handleWikiLinkClick(linkTitle) {
   console.log('🔗 Wiki link clicked:', linkTitle)
 
-  // Find note by title
   const targetNote = await notesStore.findNoteByTitle(linkTitle)
 
   if (targetNote) {
-    // Navigate to the note
     notesStore.selectNote(targetNote.id)
     console.log('📍 Navigated to:', targetNote.title)
   } else {
     console.warn('⚠️ Note not found:', linkTitle)
-    // Optionally: show a toast notification or create the note
   }
 }
 
@@ -270,10 +297,7 @@ const { triggerSave } = useAutoSave(async () => {
       content: content.value
     })
 
-    // Process detected expenses
     await processDetectedExpenses()
-
-    // Process detected links
     await processDetectedLinks()
 
     saveStatus.value = 'saved'
@@ -296,53 +320,24 @@ watch([title, content], () => {
   }
 })
 
-// Load note when selected - sync with TipTap
+// Load note when selected
 watch(currentNote, (note) => {
   if (note && editor.value) {
     title.value = note.title || ''
     content.value = note.content || ''
 
-    // Update TipTap content
     editor.value.commands.setContent(note.content || '')
 
     saveStatus.value = 'saved'
     processedExpenses.value.clear()
-    processedLinks.value.clear() // Reset link tracking for new note
+    processedLinks.value.clear()
   }
 })
 
-// Setup header click folding on mount
 onMounted(() => {
-  // Use MutationObserver to watch for header changes
-  const observer = new MutationObserver(() => {
-    setupHeaderFolding()
-  })
-
-  const editorEl = document.querySelector('.tiptap-editor')
-  if (editorEl) {
-    observer.observe(editorEl, { childList: true, subtree: true })
-    setupHeaderFolding()
-  }
+  console.log('🚀 NoteEditor mounted')
 })
 
-// Setup click handlers for org-mode folding
-function setupHeaderFolding() {
-  const headers = document.querySelectorAll('.tiptap-editor h1, .tiptap-editor h2, .tiptap-editor h3, .tiptap-editor h4, .tiptap-editor h5, .tiptap-editor h6')
-
-  headers.forEach(header => {
-    // Remove existing listener to avoid duplicates
-    header.removeEventListener('click', toggleFold)
-    // Add click listener
-    header.addEventListener('click', toggleFold)
-  })
-}
-
-function toggleFold(event) {
-  event.target.classList.toggle('org-folded')
-  console.log('📂 Clicked header to toggle fold')
-}
-
-// Cleanup on unmount
 onBeforeUnmount(() => {
   if (editor.value) {
     editor.value.destroy()
@@ -353,40 +348,37 @@ onBeforeUnmount(() => {
 async function processDetectedExpenses() {
   if (!currentNote.value) return
 
-  // Fetch existing expenses for this note from database
   const { data: existingExpenses } = await supabase
     .from('expenses')
     .select('amount, description, category')
     .eq('source_note_id', currentNote.value.id)
 
-  // Create a Set of existing expense keys
   const existingKeys = new Set(
     (existingExpenses || []).map(e => `${e.amount}-${e.description}-${e.category}`)
   )
 
   for (const expense of detectedExpenses.value) {
-    // Create unique identifier for this expense
     const expenseKey = `${expense.amount}-${expense.description}-${expense.category}`
 
-    // Skip if already exists in database OR already processed in this session
     if (existingKeys.has(expenseKey) || processedExpenses.value.has(expenseKey)) {
       console.log('⏭️ Skipping duplicate expense:', expenseKey)
       continue
     }
 
     try {
-      // Create expense in database
-      // Use note's creation date (not today's date) to prevent duplicates on re-save
+      const expenseDate = useCustomExpenseDate.value
+        ? customExpenseDate.value
+        : currentNote.value.created_at.split('T')[0]
+
       const createdExpense = await expensesStore.createExpense({
         amount: expense.amount,
         description: expense.description,
         category: expense.category,
-        date: currentNote.value.created_at.split('T')[0], // Use note's date, not today
+        date: expenseDate,
         source_note_id: currentNote.value.id,
         detection_method: 'inline'
       })
 
-      // Create note-expense link
       await expensesStore.createNoteExpenseLink(
         currentNote.value.id,
         createdExpense.id,
@@ -394,7 +386,6 @@ async function processDetectedExpenses() {
         1.0
       )
 
-      // Mark as processed
       processedExpenses.value.add(expenseKey)
       existingKeys.add(expenseKey)
 
@@ -409,10 +400,8 @@ async function processDetectedExpenses() {
 async function processDetectedLinks() {
   if (!currentNote.value) return
 
-  // Extract all [[links]] from content
   const detectedLinkTitles = extractLinks(content.value)
 
-  // Fetch existing links from database to avoid duplicates
   const existingLinks = await notesStore.fetchNoteLinks(currentNote.value.id)
   const existingLinkTitles = new Set(existingLinks.map(link => link.link_text))
 
@@ -420,39 +409,31 @@ async function processDetectedLinks() {
   console.log('📚 Existing links:', [...existingLinkTitles])
 
   for (const linkTitle of detectedLinkTitles) {
-    // Skip if already processed in this session OR exists in database
     if (processedLinks.value.has(linkTitle) || existingLinkTitles.has(linkTitle)) {
       console.log('⏭️ Skipping existing link:', linkTitle)
       continue
     }
 
     try {
-      // Try to find the target note by title
       const targetNote = await notesStore.findNoteByTitle(linkTitle)
 
       if (targetNote) {
-        // Target note exists - create link
         await notesStore.createNoteLink(
-          currentNote.value.id,  // source (this note)
-          targetNote.id,          // target (the linked note)
+          currentNote.value.id,
+          targetNote.id,
           linkTitle
         )
 
         processedLinks.value.add(linkTitle)
         console.log('✅ Created link to existing note:', linkTitle)
       } else {
-        // Target note doesn't exist yet
         console.log('⚠️ Target note not found:', linkTitle, '(link not created)')
-        // Note: We could auto-create the note here, but for now we skip
-        // This follows Obsidian's behavior where links can point to non-existent notes
       }
     } catch (error) {
       console.error('❌ Failed to create link:', linkTitle, error)
     }
   }
 
-  // Clean up: Remove processed links that are no longer in the content
-  // This handles the case where user deletes a [[link]]
   const currentLinkSet = new Set(detectedLinkTitles)
   for (const processedLink of processedLinks.value) {
     if (!currentLinkSet.has(processedLink)) {
@@ -483,132 +464,117 @@ function formatDateTime(dateString) {
     year: date.getFullYear() !== now.getFullYear() ? 'numeric' : undefined
   })
 }
+
+// Format expense date for display
+function formatExpenseDate(dateString) {
+  if (!dateString) return 'N/A'
+  const date = new Date(dateString)
+  return date.toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric'
+  })
+}
+
 </script>
 
 <style>
-/* TipTap Editor Styles */
-.tiptap-editor {
-  min-height: 300px;
-  border: 1px solid #e5e7eb;
-  border-radius: 0.5rem;
-  padding: 1rem;
-  font-size: 16px;
-  line-height: 1.6;
-}
+/* TipTap Editor - Org-Mode Style Collapsible Headers */
 
-.tiptap-editor:focus {
-  outline: none;
-  border-color: #3b82f6;
-}
-
-/* Doom Emacs Org-Mode Style Headers - Hierarchical Indentation with Colors */
-/* Each level indents progressively with distinct colors, just like Doom Emacs */
-
+/* H1 - Blue - Top level */
 .tiptap-editor h1 {
-  color: #4F9FCF;  /* Doom Emacs org-level-1: Blue */
-  font-size: 28px;
-  font-weight: 700;
-  margin-top: 24px;
-  margin-bottom: 8px;
-  margin-left: 0;  /* Level 1: No indent */
-  line-height: 1.3;
+  color: #81A2BE;
+  font-size: 26px;
+  font-weight: 600;
+  margin-top: 1.75rem;
+  margin-bottom: 0.75rem;
+  line-height: 1.375;
+  letter-spacing: -0.02em;
 }
 
+/* H2 - Green - Nested under H1 */
 .tiptap-editor h2 {
-  color: #A7C080;  /* Doom Emacs org-level-2: Green */
+  color: #B5BD68;
   font-size: 22px;
   font-weight: 600;
-  margin-top: 20px;
-  margin-bottom: 6px;
-  margin-left: 16px;  /* Level 2: Indent under H1 */
-  line-height: 1.3;
+  margin-top: 1.5rem;
+  margin-bottom: 0.625rem;
+  margin-left: 0.75rem;
+  line-height: 1.375;
 }
 
+/* H3 - Pink - Nested under H2 */
 .tiptap-editor h3 {
-  color: #D699B6;  /* Doom Emacs org-level-3: Pink */
-  font-size: 18px;
+  color: #DE935F;
+  font-size: 19px;
   font-weight: 600;
-  margin-top: 16px;
-  margin-bottom: 4px;
-  margin-left: 32px;  /* Level 3: Indent under H2 */
-  line-height: 1.3;
+  margin-top: 1.25rem;
+  margin-bottom: 0.5rem;
+  margin-left: 1.5rem;
+  line-height: 1.375;
 }
 
+/* H4, H5, H6 - Additional levels without collapse */
 .tiptap-editor h4 {
-  color: #DBBC7F;  /* Doom Emacs org-level-4: Yellow */
-  font-size: 16px;
+  color: #B294BB;
+  font-size: 17px;
   font-weight: 600;
-  margin-top: 12px;
-  margin-bottom: 4px;
-  margin-left: 48px;  /* Level 4: Indent under H3 */
-  line-height: 1.3;
+  margin-top: 1rem;
+  margin-bottom: 0.375rem;
+  margin-left: 2.25rem;
+  line-height: 1.375;
 }
 
 .tiptap-editor h5 {
-  color: #E69875;  /* Doom Emacs org-level-5: Orange */
-  font-size: 14px;
+  color: #8ABEB7;
+  font-size: 16px;
   font-weight: 600;
-  margin-top: 8px;
-  margin-bottom: 2px;
-  margin-left: 64px;  /* Level 5: Indent under H4 */
-  line-height: 1.3;
+  margin-top: 0.875rem;
+  margin-bottom: 0.375rem;
+  margin-left: 3rem;
+  line-height: 1.375;
 }
 
 .tiptap-editor h6 {
-  color: #A7C080;  /* Doom Emacs org-level-6: Teal */
-  font-size: 14px;
+  color: #CC6666;
+  font-size: 15px;
   font-weight: 500;
-  margin-top: 8px;
-  margin-bottom: 2px;
-  margin-left: 80px;  /* Level 6: Indent under H5 */
-  line-height: 1.3;
+  margin-top: 0.75rem;
+  margin-bottom: 0.25rem;
+  margin-left: 3.75rem;
+  line-height: 1.375;
 }
 
-/* Org-Mode Folding - Clickable Headers */
-.tiptap-editor h1,
-.tiptap-editor h2,
-.tiptap-editor h3,
-.tiptap-editor h4,
-.tiptap-editor h5,
-.tiptap-editor h6 {
+/* PrimeVue Accordion Styling */
+.notion-accordion {
+  border: 1px solid var(--notion-border);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.notion-accordion :deep(.p-accordionpanel) {
+  border-bottom: 1px solid var(--notion-border);
+}
+
+.notion-accordion :deep(.p-accordionpanel:last-child) {
+  border-bottom: none;
+}
+
+.notion-accordion :deep(.p-accordionheader-content) {
+  padding: 12px 16px;
   cursor: pointer;
-  position: relative;
-  padding-left: 20px;
+  transition: all 0.2s;
+  background-color: var(--notion-bg);
 }
 
-/* Folding indicator (arrow) */
-.tiptap-editor h1::before,
-.tiptap-editor h2::before,
-.tiptap-editor h3::before,
-.tiptap-editor h4::before,
-.tiptap-editor h5::before,
-.tiptap-editor h6::before {
-  content: '▼';
-  position: absolute;
-  left: 0;
-  font-size: 10px;
-  color: var(--notion-text-tertiary);
-  transition: transform 0.2s ease;
+.notion-accordion :deep(.p-accordionheader-content:hover) {
+  background-color: var(--notion-bg-hover);
 }
 
-/* When folded, rotate arrow */
-.tiptap-editor h1.org-folded::before,
-.tiptap-editor h2.org-folded::before,
-.tiptap-editor h3.org-folded::before,
-.tiptap-editor h4.org-folded::before,
-.tiptap-editor h5.org-folded::before,
-.tiptap-editor h6.org-folded::before {
-  transform: rotate(-90deg);
-}
-
-/* Hide content after folded headers */
-.tiptap-editor h1.org-folded ~ *:not(h1),
-.tiptap-editor h2.org-folded ~ *:not(h1):not(h2),
-.tiptap-editor h3.org-folded ~ *:not(h1):not(h2):not(h3),
-.tiptap-editor h4.org-folded ~ *:not(h1):not(h2):not(h3):not(h4),
-.tiptap-editor h5.org-folded ~ *:not(h1):not(h2):not(h3):not(h4):not(h5),
-.tiptap-editor h6.org-folded ~ * {
-  display: none;
+.notion-accordion :deep(.p-accordionpanel-content) {
+  padding: 16px;
+  background-color: var(--notion-bg);
+  border-top: 1px solid var(--notion-border);
 }
 
 .tiptap-editor ul,
@@ -645,47 +611,32 @@ code {
   border-radius: 0.25rem;
 }
 
-/* Toolbar button styles */
-.tiptap-toolbar button {
-  transition: all 0.2s;
-}
-
-.tiptap-toolbar button:hover {
-  transform: translateY(-1px);
-}
-
-.tiptap-toolbar button:active {
-  transform: translateY(0);
-}
-
 /* Wiki Link Styling */
 .wiki-link-text {
-  color: #7c3aed !important; /* Purple-600 */
-  background-color: #f3e8ff !important; /* Purple-50 */
+  color: #7c3aed !important;
+  background-color: #f3e8ff !important;
   padding: 2px 4px;
   border-radius: 4px;
   cursor: pointer !important;
   font-weight: 500;
   transition: all 0.2s;
-  border-bottom: 2px solid #a78bfa; /* Purple-400 */
-  user-select: none; /* Prevent text selection on click */
-  pointer-events: auto; /* Ensure clicks are captured */
-  display: inline; /* Ensure it's inline with text */
+  border-bottom: 2px solid #a78bfa;
+  user-select: none;
+  pointer-events: auto;
+  display: inline;
 }
 
 .wiki-link-text:hover {
-  background-color: #e9d5ff !important; /* Purple-100 */
-  border-bottom-color: #7c3aed; /* Purple-600 */
+  background-color: #e9d5ff !important;
+  border-bottom-color: #7c3aed;
   transform: translateY(-1px);
 }
 
-/* Make it clear it's clickable */
 .wiki-link-text:active {
   transform: translateY(0);
-  background-color: #ddd6fe !important; /* Purple-200 */
+  background-color: #ddd6fe !important;
 }
 
-/* Ensure TipTap editor allows pointer events */
 .tiptap-editor .wiki-link-text {
   pointer-events: auto !important;
 }
