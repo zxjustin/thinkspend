@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { supabase } from '@/lib/supabase'
+import { discoverRelatedNotes } from '@/lib/crossNoteDiscovery'
 
 export const useExpensesStore = defineStore('expenses', () => {
   const expenses = ref([])
@@ -25,6 +26,17 @@ export const useExpensesStore = defineStore('expenses', () => {
     if (error) throw error
 
     expenses.value.unshift(data)
+
+    // 🔍 AUTO-DISCOVERY: Find related notes
+    // This is the core algorithmic contribution of ThinkSpend
+    try {
+      const links = await discoverRelatedNotes(data, 0.3, 5)
+      console.log(`✨ Auto-discovered ${links.length} related notes`)
+    } catch (discoveryError) {
+      console.error('❌ Error during auto-discovery:', discoveryError)
+      // Don't fail expense creation if discovery fails
+    }
+
     return data
   }
 
