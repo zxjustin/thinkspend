@@ -106,7 +106,7 @@ onMounted(async () => {
 
   // Load expenses if not already loaded
   if (expensesStore.expenses.length === 0) {
-    await expensesStore.loadExpenses()
+    await expensesStore.fetchExpenses()
   }
 
   console.log(`📊 Loaded ${notesStore.notes.length} notes and ${expensesStore.expenses.length} expenses for search`)
