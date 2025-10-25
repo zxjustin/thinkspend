@@ -109,13 +109,37 @@ export const useNotesStore = defineStore('notes', () => {
       .from('notes')
       .delete()
       .eq('id', id)
-    
+
     if (error) throw error
     notes.value = notes.value.filter(n => n.id !== id)
-    
+
     if (currentNote.value?.id === id) {
       currentNote.value = null
     }
+  }
+
+  async function moveNote(noteId, targetFolderId) {
+    const { data, error } = await supabase
+      .from('notes')
+      .update({ folder_id: targetFolderId })
+      .eq('id', noteId)
+      .select()
+      .single()
+
+    if (error) throw error
+
+    // Update in array
+    const index = notes.value.findIndex(n => n.id === noteId)
+    if (index !== -1) {
+      notes.value[index] = data
+    }
+
+    // Update current note if it's the one being moved
+    if (currentNote.value?.id === noteId) {
+      currentNote.value = data
+    }
+
+    return data
   }
 
   function selectNote(id) {
@@ -223,6 +247,7 @@ export const useNotesStore = defineStore('notes', () => {
     createNote,
     updateNote,
     deleteNote,
+    moveNote,
     selectNote,
     // Link functions
     createNoteLink,
