@@ -3,8 +3,12 @@
     <!-- Folder Row -->
     <div
       class="group flex items-center gap-2 px-2 py-1.5 rounded cursor-pointer notion-bg-hover transition-all duration-200"
+      :class="{ 'notion-bg-selected': isDragOver }"
       :style="{ paddingLeft: `${depth * 12 + 8}px` }"
       @click="toggleExpanded"
+      @dragover="handleFolderDragOver"
+      @dragleave="handleFolderDragLeave"
+      @drop="handleFolderDrop"
     >
       <!-- Expand Icon -->
       <i
@@ -24,6 +28,11 @@
 
       <!-- Folder Name -->
       <span class="text-sm font-medium notion-text-primary flex-1 truncate">{{ folder.name }}</span>
+
+      <!-- Note Count Badge -->
+      <span v-if="noteCount > 0" class="text-xs notion-text-tertiary px-1.5 py-0.5 rounded" style="background-color: var(--notion-bg-secondary);">
+        {{ noteCount }}
+      </span>
 
       <!-- Action Buttons -->
       <div class="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
@@ -49,6 +58,8 @@
       <FolderTree
         :folders="childFolders"
         :depth="depth + 1"
+        :expand-signal="expandSignal"
+        :collapse-signal="collapseSignal"
       />
     </div>
 
@@ -57,12 +68,15 @@
       <div
         v-for="note in folderNotes"
         :key="note.id"
+        draggable="true"
         class="group/note flex items-center gap-2 px-2 py-2 mb-0.5 rounded cursor-pointer notion-bg-hover transition-all duration-200"
         :class="{
           'notion-bg-selected': isSelected(note.id)
         }"
         :style="{ paddingLeft: `${(depth + 1) * 12 + 8}px` }"
         @click="selectNote(note)"
+        @dragstart="handleNoteDragStart($event, note)"
+        @dragend="handleNoteDragEnd"
       >
         <i class="pi pi-file notion-text-tertiary" style="font-size: 11px;"></i>
         <div class="flex-1 min-w-0">
@@ -96,7 +110,7 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { useNotesStore } from '@/stores/notes'
 import { useExpensesStore } from '@/stores/expenses'
 import { useConfirm } from 'primevue/useconfirm'
@@ -107,13 +121,28 @@ const props = defineProps({
   depth: {
     type: Number,
     default: 0
-  }
+  },
+  expandSignal: Number,
+  collapseSignal: Number
 })
 
 const notesStore = useNotesStore()
 const expensesStore = useExpensesStore()
 const confirm = useConfirm()
 const isExpanded = ref(false)
+const isDragOver = ref(false)
+
+// Watch for expand/collapse signals
+watch(() => props.expandSignal, () => {
+  if (hasChildren.value) {
+    isExpanded.value = true
+    notesStore.loadNotes(props.folder.id)
+  }
+})
+
+watch(() => props.collapseSignal, () => {
+  isExpanded.value = false
+})
 
 const hasChildren = computed(() => {
   return notesStore.folders.some(f => f.parent_id === props.folder.id) ||
@@ -126,6 +155,10 @@ const childFolders = computed(() => {
 
 const folderNotes = computed(() => {
   return notesStore.notes.filter(n => n.folder_id === props.folder.id)
+})
+
+const noteCount = computed(() => {
+  return folderNotes.value.length
 })
 
 function toggleExpanded() {
@@ -200,4 +233,69 @@ function confirmDeleteNote(noteId) {
     }
   })
 }
+
+// Drag and Drop handlers
+function handleNoteDragStart(event, note) {
+  event.dataTransfer.effectAllowed = 'move'
+  event.dataTransfer.setData('noteId', note.id)
+  event.dataTransfer.setData('noteTitle', note.title)
+
+  // Add visual feedback - make element semi-transparent
+  event.target.style.opacity = '0.5'
+
+  console.log('🎯 Started dragging note:', note.title)
+}
+
+function handleNoteDragEnd(event) {
+  // Restore opacity
+  event.target.style.opacity = '1'
+  console.log('🎯 Drag ended')
+}
+
+function handleFolderDragOver(event) {
+  event.preventDefault()
+  event.dataTransfer.dropEffect = 'move'
+  isDragOver.value = true
+}
+
+function handleFolderDragLeave(event) {
+  isDragOver.value = false
+}
+
+async function handleFolderDrop(event) {
+  event.preventDefault()
+  isDragOver.value = false
+
+  const noteId = event.dataTransfer.getData('noteId')
+  const noteTitle = event.dataTransfer.getData('noteTitle')
+
+  if (!noteId) return
+
+  try {
+    await notesStore.moveNote(noteId, props.folder.id)
+    console.log(`✅ Moved note "${noteTitle}" to folder "${props.folder.name}"`)
+
+    // Expand folder to show the newly moved note
+    if (!isExpanded.value) {
+      isExpanded.value = true
+      await notesStore.loadNotes(props.folder.id)
+    }
+  } catch (error) {
+    console.error('❌ Failed to move note:', error)
+    alert('Failed to move note.')
+  }
+}
 </script>
+
+<style scoped>
+/* Drag cursor feedback */
+[draggable="true"] {
+  cursor: grab;
+}
+
+[draggable="true"]:active {
+  cursor: grabbing;
+}
+
+/* Drop zone highlight (using notion-bg-selected class dynamically) */
+</style>
