@@ -13,6 +13,16 @@
               ThinkSpend
             </h1>
           </div>
+
+          <!-- Logout Button -->
+          <button
+            @click="handleLogout"
+            v-tooltip.bottom="'Sign Out'"
+            class="notion-button text-sm border-0"
+          >
+            <i class="pi pi-sign-out notion-text-secondary" style="font-size: 13px;"></i>
+            <span class="notion-text-secondary">Logout</span>
+          </button>
         </div>
       </div>
     </header>
@@ -74,5 +84,14 @@
 </template>
 
 <script setup>
-// No imports needed - using plain HTML buttons
+import { useRouter } from 'vue-router'
+import { useAuthStore } from '@/stores/auth'
+
+const router = useRouter()
+const authStore = useAuthStore()
+
+async function handleLogout() {
+  await authStore.signOut()
+  router.push('/login')
+}
 </script>

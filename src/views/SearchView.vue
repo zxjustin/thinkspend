@@ -98,18 +98,23 @@ function handleResultClick(result) {
  */
 onMounted(async () => {
   console.log('🔍 SearchView mounted')
-
-  // Load folders and notes if not already loaded
-  if (notesStore.folders.length === 0) {
-    await notesStore.loadFolders()
+  
+  try {
+    // Load folders and notes if not already loaded
+    if (notesStore.folders.length === 0) {
+      await notesStore.loadFolders()
+    }
+    
+    // Load expenses if not already loaded
+    if (expensesStore.expenses.length === 0) {
+      await expensesStore.fetchExpenses()
+    }
+    
+    console.log(`📊 Loaded ${notesStore.notes.length} notes and ${expensesStore.expenses.length} expenses for search`)
+  } catch (error) {
+    console.error('❌ Failed to load data for search:', error)
+    // Could show a toast notification or error banner to user
   }
-
-  // Load expenses if not already loaded
-  if (expensesStore.expenses.length === 0) {
-    await expensesStore.loadExpenses()
-  }
-
-  console.log(`📊 Loaded ${notesStore.notes.length} notes and ${expensesStore.expenses.length} expenses for search`)
 })
 </script>
 
