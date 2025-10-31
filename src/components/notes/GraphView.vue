@@ -126,8 +126,13 @@ async function loadGraph() {
   }))
 
   // Fetch all links between notes
-  const linkPromises = allNotes.map(note => notesStore.fetchNoteLinks(note.id))
-  const allLinks = await Promise.all(linkPromises)
+const linkPromises = allNotes.map(note => 
+  notesStore.fetchNoteLinks(note.id).catch(err => {
+    console.warn(`Failed to load links for note ${note.id}:`, err)
+    return []  // Return empty array on error
+  })
+)
+const allLinks = await Promise.all(linkPromises)
 
   // Create links array for D3
   links = []
