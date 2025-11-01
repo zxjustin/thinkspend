@@ -14,25 +14,25 @@
       </button>
     </div>
 
-    <div class="flex gap-4 h-[calc(100vh-250px)]">
+    <div class="flex flex-col lg:flex-row gap-4 h-[calc(100vh-200px)]">
       <!-- Sidebar -->
-      <NoteSidebar class="w-64" />
+      <NoteSidebar class="w-full lg:w-64 lg:flex-shrink-0" />
 
       <!-- Editor or Graph View -->
       <GraphView
         v-if="showGraphView"
-        class="flex-1"
+        class="flex-1 min-h-[400px] lg:min-h-0"
         @close="showGraphView = false"
       />
       <NoteEditor
         v-else
-        class="flex-1"
+        class="flex-1 min-h-[400px] lg:min-h-0"
       />
 
       <!-- Connection Panel (only show when not in graph view) -->
       <ConnectionPanel
         v-if="!showGraphView && showConnectionPanel && currentNote"
-        class="w-80"
+        class="w-full lg:w-80 lg:flex-shrink-0"
         @close="showConnectionPanel = false"
       />
     </div>
