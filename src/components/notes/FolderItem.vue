@@ -84,7 +84,7 @@
 
           <!-- Connection Badges - Colored Pills for Vibrancy -->
           <div v-if="noteConnections(note.id).expenses > 0 || noteConnections(note.id).links > 0"
-               class="flex gap-1.5 mt-1">
+               class="flex gap-1.5 mt-2">
             <span v-if="noteConnections(note.id).expenses > 0" class="notion-pill notion-pill-green">
               <i class="pi pi-dollar" style="font-size: 9px;"></i>
               <span>{{ noteConnections(note.id).expenses }}</span>
