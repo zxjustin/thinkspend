@@ -17,58 +17,43 @@
 
       <!-- Row 2: Direct Action Buttons -->
       <div class="flex gap-2">
-        <!-- Quick Note - PRIMARY action, biggest target -->
-        <button
-          @click="quickCapture"
-          v-tooltip.top="'Quick note → goes to inbox'"
-          class="flex-1 notion-button text-xs py-2 justify-center font-medium"
-        >
-          <i class="pi pi-bolt" style="font-size: 12px;"></i>
-          <span>Quick Note</span>
-        </button>
-
-        <!-- New Folder - SECONDARY action -->
+        <!-- New Folder - PRIMARY action -->
         <button
           @click="showNewFolderDialog = true"
           v-tooltip.top="'Create new folder'"
-          class="notion-button text-xs py-2 px-3 justify-center"
+          class="flex-1 notion-button text-xs py-2 justify-center font-medium"
         >
           <i class="pi pi-folder-plus" style="font-size: 12px;"></i>
+          <span>New Folder</span>
         </button>
-      </div>
-
-      <!-- Quick Note Destination Hint -->
-      <div v-if="quickNotesFolder" class="mt-2 px-2 py-1.5 rounded text-xs notion-text-tertiary" style="background-color: var(--notion-bg-secondary);">
-        <i class="pi pi-info-circle" style="font-size: 10px;"></i>
-        Quick notes go to: <span class="font-medium">📥 {{ quickNotesFolder.name }}</span>
-      </div>
-    </div>
-
-    <!-- Recent Notes Section -->
-    <div v-if="recentNotes.length > 0 && !searchQuery" class="px-2 py-2 border-b" style="border-color: var(--notion-border);">
-      <div class="flex items-center justify-between px-2 mb-1">
-        <span class="text-xs font-medium notion-text-secondary">Recent</span>
-      </div>
-      <div
-        v-for="note in recentNotes"
-        :key="note.id"
-        draggable="true"
-        class="flex items-center gap-2 px-2 py-1.5 rounded cursor-pointer notion-bg-hover transition-all duration-200"
-        :class="{ 'notion-bg-selected': isSelected(note.id) }"
-        @click="selectNote(note)"
-        @dragstart="handleNoteDragStart($event, note)"
-        @dragend="handleNoteDragEnd"
-      >
-        <i class="pi pi-clock notion-text-tertiary" style="font-size: 10px;"></i>
-        <span class="text-xs notion-text-primary truncate flex-1">{{ note.title }}</span>
-        <span class="text-xs notion-text-tertiary">{{ formatTimeAgo(note.updated_at) }}</span>
       </div>
     </div>
 
     <!-- Main Content Area -->
     <div class="flex-1 overflow-y-auto">
+      <!-- Recent Notes Section -->
+      <div v-if="recentNotes.length > 0 && !searchQuery" class="px-2 py-3 border-b" style="border-color: var(--notion-border);">
+        <div class="flex items-center justify-between px-2 mb-2">
+          <span class="text-xs font-medium notion-text-secondary">Recent</span>
+        </div>
+        <div
+          v-for="note in recentNotes"
+          :key="note.id"
+          draggable="true"
+          class="flex items-center gap-2 px-2 py-1.5 rounded cursor-pointer notion-bg-hover transition-all duration-200"
+          :class="{ 'notion-bg-selected': isSelected(note.id) }"
+          @click="selectNote(note)"
+          @dragstart="handleNoteDragStart($event, note)"
+          @dragend="handleNoteDragEnd"
+        >
+          <i class="pi pi-clock notion-text-tertiary flex-shrink-0" style="font-size: 10px; width: 14px;"></i>
+          <span class="text-xs notion-text-primary truncate flex-1">{{ note.title }}</span>
+          <span class="text-xs notion-text-tertiary">{{ formatTimeAgo(note.updated_at) }}</span>
+        </div>
+      </div>
+
       <!-- All Folders Section (when not searching) -->
-      <div v-if="!searchQuery" class="px-2 py-2">
+      <div v-if="!searchQuery" class="px-2 py-3">
         <div class="px-2 mb-2">
           <span class="text-xs font-medium notion-text-secondary">All Folders</span>
         </div>
@@ -93,7 +78,7 @@
       </div>
 
       <!-- Search Results -->
-      <div v-else class="px-2 py-2">
+      <div v-else class="px-2 py-3">
         <div class="px-2 mb-2">
           <span class="text-xs font-medium notion-text-secondary">Search Results</span>
           <span class="text-xs notion-text-tertiary ml-1">({{ filteredNotes.length }})</span>
@@ -165,10 +150,6 @@ const rootFolders = computed(() => {
   return notesStore.folders.filter(f => !f.parent_id)
 })
 
-const quickNotesFolder = computed(() => {
-  return notesStore.folders.find(f => f.name === 'Quick Notes')
-})
-
 const recentNotes = computed(() => {
   return notesStore.notes
     .slice()
@@ -192,21 +173,6 @@ async function createFolder() {
   await notesStore.createFolder(newFolderName.value)
   newFolderName.value = ''
   showNewFolderDialog.value = false
-}
-
-async function quickCapture() {
-  // Always create in dedicated "Quick Notes" inbox folder
-  let inboxFolder = notesStore.folders.find(f => f.name === 'Quick Notes')
-
-  if (!inboxFolder) {
-    // Create inbox folder if it doesn't exist
-    inboxFolder = await notesStore.createFolder('Quick Notes')
-    console.log('📥 Created Quick Notes inbox folder')
-  }
-
-  const newNote = await notesStore.createNote(inboxFolder.id, 'Quick Note')
-  notesStore.selectNote(newNote.id)
-  console.log('⚡ Quick note created in inbox')
 }
 
 function selectNote(note) {
@@ -249,20 +215,12 @@ function handleNoteDragEnd(event) {
   event.target.style.opacity = '1'
 }
 
-// Keyboard shortcut for quick capture (Ctrl+N / Cmd+N)
-function handleKeyPress(e) {
-  if ((e.ctrlKey || e.metaKey) && e.key === 'n') {
-    e.preventDefault()
-    quickCapture()
-  }
-}
-
 onMounted(() => {
-  window.addEventListener('keydown', handleKeyPress)
+  console.log('📝 NoteSidebar mounted')
 })
 
 onUnmounted(() => {
-  window.removeEventListener('keydown', handleKeyPress)
+  console.log('📝 NoteSidebar unmounted')
 })
 </script>
 
