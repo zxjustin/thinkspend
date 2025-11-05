@@ -4,7 +4,7 @@
     <div
       class="group flex items-center gap-2 px-2 py-1.5 rounded cursor-pointer notion-bg-hover transition-all duration-200"
       :class="{ 'notion-bg-selected': isDragOver }"
-      :style="{ paddingLeft: `${depth * 12 + 8}px` }"
+      :style="{ paddingLeft: `${depth * 16 + 2}px` }"
       @click="toggleExpanded"
       @dragover="handleFolderDragOver"
       @dragleave="handleFolderDragLeave"
@@ -14,16 +14,16 @@
       <i
         v-if="hasChildren"
         :class="isExpanded ? 'pi pi-chevron-down' : 'pi pi-chevron-right'"
-        class="notion-text-tertiary transition-transform duration-200"
-        style="font-size: 10px;"
+        class="notion-text-tertiary transition-transform duration-200 flex-shrink-0"
+        style="font-size: 10px; width: 14px;"
       ></i>
-      <div v-else style="width: 10px;"></div>
+      <div v-else style="width: 14px; flex-shrink: 0;"></div>
 
       <!-- Folder Icon -->
       <i
         :class="isExpanded ? 'pi pi-folder-open' : 'pi pi-folder'"
-        class="notion-text-secondary"
-        style="font-size: 13px;"
+        class="notion-text-secondary flex-shrink-0"
+        style="font-size: 13px; width: 16px;"
       ></i>
 
       <!-- Folder Name -->
@@ -69,17 +69,17 @@
         v-for="note in folderNotes"
         :key="note.id"
         draggable="true"
-        class="group/note flex items-center gap-2 px-2 py-2 mb-0.5 rounded cursor-pointer notion-bg-hover transition-all duration-200"
+        class="group/note flex items-start gap-2 px-2 py-2 mb-0.5 rounded cursor-pointer notion-bg-hover transition-all duration-200"
         :class="{
           'notion-bg-selected': isSelected(note.id)
         }"
-        :style="{ paddingLeft: `${(depth + 1) * 12 + 8}px` }"
+        :style="{ paddingLeft: `${depth * 16 + 32}px` }"
         @click="selectNote(note)"
         @dragstart="handleNoteDragStart($event, note)"
         @dragend="handleNoteDragEnd"
       >
-        <i class="pi pi-file notion-text-tertiary" style="font-size: 11px;"></i>
-        <div class="flex-1 min-w-0">
+        <i class="pi pi-file notion-text-tertiary flex-shrink-0" style="font-size: 11px; width: 14px; margin-top: 2px;"></i>
+        <div class="flex-1 min-w-0 flex flex-col">
           <div class="text-sm notion-text-primary truncate">{{ note.title }}</div>
 
           <!-- Connection Badges - Colored Pills for Vibrancy -->
