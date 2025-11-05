@@ -1,24 +1,36 @@
 <template>
   <AppLayout>
-    <div class="max-w-3xl mx-auto">
-      <!-- Loading State -->
-      <div v-if="loading" class="text-center py-12">
-        <i class="pi pi-spin pi-spinner notion-text-tertiary" style="font-size: 32px;"></i>
-      </div>
-
-      <!-- Empty State -->
-      <div v-else-if="expenses.length === 0" class="text-center py-12">
-        <div class="w-20 h-20 rounded-lg flex items-center justify-center mx-auto mb-4" style="background-color: var(--notion-bg-secondary);">
-          <i class="pi pi-wallet notion-text-tertiary" style="font-size: 40px;"></i>
+    <ResizableLayoutContainer storage-key="expenses-view-layout" :show-right-panel="currentNote">
+      <template #left>
+        <!-- Empty sidebar for expenses view -->
+        <div class="px-3 py-2.5 border-b" style="border-color: var(--notion-border);">
+          <div class="text-xs font-semibold notion-text-secondary uppercase tracking-wider">Categories</div>
         </div>
-        <p class="text-base font-medium notion-text-primary mb-2">No expenses yet</p>
-        <p class="text-sm notion-text-secondary" style="line-height: 1.5;">
-          Add expenses by typing them in your notes like: $25 Lunch [Food]
-        </p>
-      </div>
+        <div class="flex-1 overflow-y-auto p-3">
+          <p class="text-xs notion-text-secondary">No categories yet</p>
+        </div>
+      </template>
 
-      <!-- Expenses List - Grouped by Month -->
-      <div v-else>
+      <template #main>
+        <div class="flex-1 overflow-y-auto px-8 py-6">
+          <!-- Loading State -->
+          <div v-if="loading" class="text-center py-12">
+            <i class="pi pi-spin pi-spinner notion-text-tertiary" style="font-size: 32px;"></i>
+          </div>
+
+          <!-- Empty State -->
+          <div v-else-if="expenses.length === 0" class="text-center py-12">
+            <div class="w-20 h-20 rounded-lg flex items-center justify-center mx-auto mb-4" style="background-color: var(--notion-bg-secondary);">
+              <i class="pi pi-wallet notion-text-tertiary" style="font-size: 40px;"></i>
+            </div>
+            <p class="text-base font-medium notion-text-primary mb-2">No expenses yet</p>
+            <p class="text-sm notion-text-secondary" style="line-height: 1.5;">
+              Add expenses by typing them in your notes like: $25 Lunch [Food]
+            </p>
+          </div>
+
+          <!-- Expenses List - Grouped by Month -->
+          <div v-else>
         <!-- Header -->
         <div class="mb-8">
           <h1 class="text-3xl font-bold notion-text-primary mb-2">All Expenses</h1>
@@ -150,8 +162,19 @@
             </div>
           </div>
         </div>
-      </div>
-    </div>
+          </div>
+        </div>
+      </template>
+
+      <template #right>
+        <div class="px-4 py-3 border-b" style="border-color: var(--notion-border);">
+          <div class="text-xs font-semibold notion-text-secondary uppercase tracking-wider">Related</div>
+        </div>
+        <div class="flex-1 overflow-y-auto p-3">
+          <p class="text-xs notion-text-secondary">No related notes</p>
+        </div>
+      </template>
+    </ResizableLayoutContainer>
   </AppLayout>
 </template>
 
@@ -159,9 +182,11 @@
 import { ref, computed, onMounted } from 'vue'
 import { useExpensesStore } from '@/stores/expenses'
 import AppLayout from '@/components/common/AppLayout.vue'
+import ResizableLayoutContainer from '@/components/common/ResizableLayoutContainer.vue'
 
 const expensesStore = useExpensesStore()
 const loading = ref(true)
+const currentNote = ref(null) // Placeholder for potential right panel content
 
 // Date filter state
 const dateFilter = ref('all')
