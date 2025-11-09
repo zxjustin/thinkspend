@@ -1,113 +1,78 @@
 <template>
   <div class="notion-bg border overflow-hidden flex flex-col h-full" style="border-color: var(--notion-border); border-radius: var(--radius-md);">
-    <!-- Zero-Click Header (Fitts' Law Optimized) -->
-    <div class="px-3 py-2.5 border-b" style="border-color: var(--notion-border);">
-      <!-- Row 1: Search (Always Visible) -->
-      <div class="mb-2">
-        <span class="p-input-icon-left w-full">
-          <i class="pi pi-search" style="font-size: 11px;"></i>
-          <InputText
-            v-model="searchQuery"
-            placeholder="Search notes..."
-            class="w-full text-xs"
-            style="padding-left: 2.25rem;"
-          />
-        </span>
-      </div>
-
-      <!-- Row 2: Direct Action Buttons -->
-      <div class="flex gap-2">
-        <!-- New Folder - PRIMARY action -->
-        <button
-          @click="showNewFolderDialog = true"
-          v-tooltip.top="'Create new folder'"
-          class="flex-1 notion-button text-xs py-2 justify-center font-medium"
-        >
-          <i class="pi pi-folder-plus" style="font-size: 12px;"></i>
-          <span>New Folder</span>
-        </button>
-      </div>
+    <!-- Header with Action Button -->
+    <div class="px-3 py-3 border-b flex-shrink-0" style="border-color: var(--notion-border);">
+      <!-- New Folder - PRIMARY action -->
+      <button
+        @click="showNewFolderDialog = true"
+        v-tooltip.top="'Create new folder'"
+        class="primary-button w-full text-xs py-2.5 px-3 justify-center font-medium rounded transition-all duration-150"
+        title="Create a new folder"
+      >
+        <i class="pi pi-folder-plus" style="font-size: 13px;"></i>
+        <span class="ml-1.5">New Folder</span>
+      </button>
     </div>
 
-    <!-- Main Content Area -->
-    <div class="flex-1 overflow-y-auto">
-      <!-- Recent Notes Section -->
-      <div v-if="recentNotes.length > 0 && !searchQuery" class="px-2 py-3 border-b" style="border-color: var(--notion-border);">
-        <div class="flex items-center justify-between px-2 mb-2">
-          <span class="text-xs font-medium notion-text-secondary">Recent</span>
-        </div>
-        <div
-          v-for="note in recentNotes"
-          :key="note.id"
-          draggable="true"
-          class="flex items-center gap-2 px-2 py-1.5 rounded cursor-pointer notion-bg-hover transition-all duration-200"
-          :class="{ 'notion-bg-selected': isSelected(note.id) }"
-          @click="selectNote(note)"
-          @dragstart="handleNoteDragStart($event, note)"
-          @dragend="handleNoteDragEnd"
-        >
-          <i class="pi pi-clock notion-text-tertiary flex-shrink-0" style="font-size: 10px; width: 14px;"></i>
-          <span class="text-xs notion-text-primary truncate flex-1">{{ note.title }}</span>
-          <span class="text-xs notion-text-tertiary">{{ formatTimeAgo(note.updated_at) }}</span>
+    <!-- Main Content Area - Two independent scrollable sections -->
+    <div class="flex-1 flex flex-col min-h-0 overflow-hidden">
+      <!-- Recent Notes Section - Fixed Height container with its own scroll -->
+      <div v-if="recentNotes.length > 0" class="flex-shrink-0 border-b overflow-hidden" style="border-color: var(--notion-border); height: 200px;">
+        <div class="h-full overflow-y-auto">
+          <div class="px-2 py-3">
+            <div class="flex items-center justify-between px-2 mb-2">
+              <span class="text-xs font-medium notion-text-secondary">Recent</span>
+            </div>
+            <div
+              v-for="note in recentNotes"
+              :key="note.id"
+              draggable="true"
+              class="flex items-center gap-2 px-2 py-1.5 rounded cursor-pointer notion-bg-hover transition-all duration-200 min-w-0 w-full"
+              :class="{ 'notion-bg-selected': isSelected(note.id) }"
+              @click="selectNote(note)"
+              @dragstart="handleNoteDragStart($event, note)"
+              @dragend="handleNoteDragEnd"
+            >
+              <i class="pi pi-clock notion-text-tertiary flex-shrink-0" style="font-size: 10px; width: 14px; min-width: 14px; display: inline-flex; align-items: center; justify-content: center;"></i>
+              <span class="text-xs notion-text-primary truncate min-w-0 flex-1">{{ note.title }}</span>
+              <span class="text-xs notion-text-tertiary flex-shrink-0 whitespace-nowrap">{{ formatTimeAgo(note.updated_at) }}</span>
+            </div>
+          </div>
         </div>
       </div>
 
-      <!-- All Folders Section (when not searching) -->
-      <div v-if="!searchQuery" class="px-2 py-3">
-        <div class="px-2 mb-2">
-          <span class="text-xs font-medium notion-text-secondary">All Folders</span>
-        </div>
-
-        <FolderTree
-          v-if="rootFolders.length > 0"
-          :folders="rootFolders"
-          :expand-signal="expandSignal"
-          :collapse-signal="collapseSignal"
-        />
-
-        <!-- Empty State -->
-        <div v-else class="flex flex-col items-center justify-center py-8 px-4 text-center">
-          <div class="w-16 h-16 rounded-lg flex items-center justify-center mb-3" style="background-color: var(--notion-bg-secondary);">
-            <i class="pi pi-folder-open notion-text-tertiary" style="font-size: 24px;"></i>
+      <!-- Folders - Flexing to fill remaining space with its own scroll -->
+      <div class="flex-1 min-h-0 overflow-y-auto flex flex-col">
+        <!-- All Folders Section -->
+        <div class="px-2 py-3">
+          <div class="px-2 mb-2">
+            <span class="text-xs font-medium notion-text-secondary">All Folders</span>
           </div>
-          <h4 class="text-xs font-medium notion-text-primary mb-1">No folders yet</h4>
-          <p class="text-xs notion-text-secondary mb-4" style="line-height: 1.4;">
-            Create your first folder to organize notes
-          </p>
-        </div>
-      </div>
 
-      <!-- Search Results -->
-      <div v-else class="px-2 py-3">
-        <div class="px-2 mb-2">
-          <span class="text-xs font-medium notion-text-secondary">Search Results</span>
-          <span class="text-xs notion-text-tertiary ml-1">({{ filteredNotes.length }})</span>
-        </div>
-        <div
-          v-for="note in filteredNotes"
-          :key="note.id"
-          class="flex items-center gap-2 px-2 py-2 rounded cursor-pointer notion-bg-hover transition-all duration-200"
-          :class="{ 'notion-bg-selected': isSelected(note.id) }"
-          @click="selectNote(note)"
-        >
-          <i class="pi pi-file notion-text-tertiary" style="font-size: 10px;"></i>
-          <div class="flex-1 min-w-0">
-            <div class="text-xs notion-text-primary truncate">{{ note.title }}</div>
-            <div class="text-xs notion-text-tertiary">{{ getFolderName(note.folder_id) }}</div>
+          <TreeFolderView
+            v-if="notesStore.folders.length > 0"
+          />
+
+          <!-- Empty State -->
+          <div v-if="notesStore.folders.length === 0" class="flex flex-col items-center justify-center py-8 px-4 text-center">
+            <div class="w-16 h-16 rounded-lg flex items-center justify-center mb-3" style="background-color: var(--notion-bg-secondary);">
+              <i class="pi pi-folder-open notion-text-tertiary" style="font-size: 24px;"></i>
+            </div>
+            <h4 class="text-xs font-medium notion-text-primary mb-1">No folders yet</h4>
+            <p class="text-xs notion-text-secondary mb-4" style="line-height: 1.4;">
+              Create your first folder to organize notes
+            </p>
           </div>
-        </div>
-        <div v-if="filteredNotes.length === 0" class="px-2 py-4 text-center">
-          <i class="pi pi-search notion-text-tertiary mb-2" style="font-size: 20px; display: block;"></i>
-          <p class="text-xs notion-text-secondary">No notes found</p>
         </div>
       </div>
     </div>
 
     <!-- New Folder Dialog -->
-    <Dialog 
-      v-model:visible="showNewFolderDialog" 
+    <Dialog
+      v-model:visible="showNewFolderDialog"
       header="Create New Folder"
-      :style="{ width: '400px' }"
+      :style="{ width: '400px', zIndex: 9999 }"
+      :contentStyle="{ zIndex: 9999 }"
       modal
     >
       <div class="flex flex-col gap-4">
@@ -137,34 +102,18 @@ import { useNotesStore } from '@/stores/notes'
 import Button from 'primevue/button'
 import Dialog from 'primevue/dialog'
 import InputText from 'primevue/inputtext'
-import FolderTree from './FolderTree.vue'
+import TreeFolderView from './TreeFolderView.vue'
 
 const notesStore = useNotesStore()
 const showNewFolderDialog = ref(false)
 const newFolderName = ref('')
-const searchQuery = ref('')
-const expandSignal = ref(0)
-const collapseSignal = ref(0)
 
-const rootFolders = computed(() => {
-  return notesStore.folders.filter(f => !f.parent_id)
-})
 
 const recentNotes = computed(() => {
   return notesStore.notes
     .slice()
     .sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at))
     .slice(0, 5)
-})
-
-const filteredNotes = computed(() => {
-  if (!searchQuery.value.trim()) return []
-
-  const query = searchQuery.value.toLowerCase()
-  return notesStore.notes.filter(note =>
-    note.title.toLowerCase().includes(query) ||
-    note.content.toLowerCase().includes(query)
-  )
 })
 
 async function createFolder() {
@@ -175,18 +124,12 @@ async function createFolder() {
   showNewFolderDialog.value = false
 }
 
-function selectNote(note) {
-  notesStore.selectNote(note.id)
-  searchQuery.value = '' // Clear search after selecting
+async function selectNote(note) {
+  await notesStore.selectNote(note.id)
 }
 
 function isSelected(noteId) {
   return notesStore.currentNote?.id === noteId
-}
-
-function getFolderName(folderId) {
-  const folder = notesStore.folders.find(f => f.id === folderId)
-  return folder ? folder.name : 'Unknown'
 }
 
 function formatTimeAgo(timestamp) {
@@ -225,6 +168,42 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
+/* Primary button styling */
+.primary-button {
+  display: flex;
+  align-items: center;
+  border: none;
+  background-color: var(--notion-accent, #0066cc);
+  color: white;
+  cursor: pointer;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  transition: all 150ms ease;
+}
+
+.primary-button:hover {
+  background-color: var(--notion-accent-dark, #0052a3);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+  transform: translateY(-1px);
+}
+
+.primary-button:active {
+  background-color: var(--notion-accent-darker, #003d7a);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  transform: translateY(0);
+}
+
+.primary-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Clock icon visibility in recent notes */
+.pi-clock {
+  visibility: visible;
+  opacity: 1;
+  display: inline-block;
+}
+
 /* Drag cursor feedback */
 [draggable="true"] {
   cursor: grab;
