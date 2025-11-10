@@ -6,6 +6,9 @@ export const useNotesStore = defineStore('notes', () => {
   const folders = ref([])
   const notes = ref([])
   const currentNote = ref(null)
+  const loadingNotesMap = ref(new Map()) // Track loading state per folder
+  const error = ref(null) // Track errors
+  const loadedFolders = ref(new Set()) // Track which folders have been loaded
 
   // FOLDERS
   async function loadFolders() {
@@ -13,9 +16,29 @@ export const useNotesStore = defineStore('notes', () => {
       .from('folders')
       .select('*')
       .order('name')
-    
+
     if (error) throw error
     folders.value = data
+
+    // Load all notes for all folders
+    await loadAllNotes()
+  }
+
+  // Load all notes across all folders
+  async function loadAllNotes() {
+    try {
+      const { data, error } = await supabase
+        .from('notes')
+        .select('*')
+        .order('updated_at', { ascending: false })
+
+      if (error) throw error
+
+      notes.value = data || []
+      console.log(`✅ Loaded ${notes.value.length} notes`)
+    } catch (err) {
+      console.error('❌ Failed to load all notes:', err)
+    }
   }
 
   async function createFolder(name, parentId = null) {
@@ -48,18 +71,43 @@ export const useNotesStore = defineStore('notes', () => {
 
   // NOTES
   async function loadNotes(folderId) {
-    const { data, error } = await supabase
-      .from('notes')
-      .select('*')
-      .eq('folder_id', folderId)
-      .order('updated_at', { ascending: false })
-    
-    if (error) throw error
-    
-    // Merge with existing notes (don't replace all)
-    const existingIds = new Set(notes.value.map(n => n.id))
-    const newNotes = data.filter(n => !existingIds.has(n.id))
-    notes.value.push(...newNotes)
+    // Return early if already loaded
+    if (loadedFolders.value.has(folderId)) {
+      return
+    }
+
+    // Set loading state
+    loadingNotesMap.value.set(folderId, true)
+    error.value = null
+
+    try {
+      const { data, error: fetchError } = await supabase
+        .from('notes')
+        .select('*')
+        .eq('folder_id', folderId)
+        .order('updated_at', { ascending: false })
+
+      if (fetchError) {
+        error.value = `Failed to load notes for folder: ${fetchError.message}`
+        console.error('❌ Error loading notes:', error.value)
+        throw fetchError
+      }
+
+      // Merge with existing notes (don't replace all)
+      const existingIds = new Set(notes.value.map(n => n.id))
+      const newNotes = data.filter(n => !existingIds.has(n.id))
+      notes.value.push(...newNotes)
+
+      // Mark folder as loaded
+      loadedFolders.value.add(folderId)
+      console.log(`✅ Loaded ${newNotes.length} notes for folder ${folderId}`)
+    } catch (err) {
+      console.error('❌ Failed to load notes:', err)
+      throw err
+    } finally {
+      // Clear loading state
+      loadingNotesMap.value.delete(folderId)
+    }
   }
 
   async function createNote(folderId, title = 'Untitled') {
@@ -142,8 +190,38 @@ export const useNotesStore = defineStore('notes', () => {
     return data
   }
 
-  function selectNote(id) {
-    currentNote.value = notes.value.find(n => n.id === id)
+  async function selectNote(id) {
+    // First, try to find the note in already-loaded notes
+    let note = notes.value.find(n => n.id === id)
+
+    if (!note) {
+      // If note not found, we need to load it from the database
+      console.log(`⏳ Note ${id} not loaded, fetching from database...`)
+      try {
+        const { data, error: fetchError } = await supabase
+          .from('notes')
+          .select('*')
+          .eq('id', id)
+          .single()
+
+        if (fetchError) {
+          error.value = `Failed to load note: ${fetchError.message}`
+          console.error('❌ Error loading note:', error.value)
+          return
+        }
+
+        if (data) {
+          notes.value.push(data)
+          note = data
+          console.log(`✅ Loaded note ${id} from database`)
+        }
+      } catch (err) {
+        console.error('❌ Failed to load note:', err)
+        return
+      }
+    }
+
+    currentNote.value = note || null
   }
 
   // NOTE LINKS (Bidirectional Wiki-style links)
@@ -236,10 +314,72 @@ export const useNotesStore = defineStore('notes', () => {
     return data || null
   }
 
+  // TREE TRANSFORMATION (For PrimeVue Tree component)
+  /**
+   * Transform flat folder/notes structure into hierarchical Tree format
+   * Tree format: { key, label, icon, children: [...], data: {...} }
+   */
+  function transformFoldersToTree() {
+    const folderMap = new Map()
+    const rootFolders = []
+
+    // Create tree nodes for each folder
+    folders.value.forEach(folder => {
+      const folderNotes = notes.value.filter(n => n.folder_id === folder.id)
+
+      const treeNode = {
+        key: `folder-${folder.id}`,
+        label: folder.name,
+        icon: 'pi pi-folder',
+        data: { type: 'folder', id: folder.id, ...folder },
+        children: [
+          // Add note children
+          ...folderNotes.map(note => {
+            const expenses = 0 // Could count from expensesStore
+            const linkPattern = /\[\[([^\]]+)\]\]/g
+            const links = (note.content.match(linkPattern) || []).length
+
+            return {
+              key: `note-${note.id}`,
+              label: note.title,
+              icon: 'pi pi-file',
+              data: { type: 'note', id: note.id, ...note, expenses, links },
+              leaf: true // Notes are leaf nodes
+            }
+          })
+        ]
+      }
+
+      folderMap.set(folder.id, treeNode)
+
+      // If no parent, add to root
+      if (!folder.parent_id) {
+        rootFolders.push(treeNode)
+      }
+    })
+
+    // Build hierarchical structure
+    folderMap.forEach((treeNode, folderId) => {
+      const folder = folders.value.find(f => f.id === folderId)
+      if (folder?.parent_id) {
+        const parentNode = folderMap.get(folder.parent_id)
+        if (parentNode) {
+          // Add folder as child of parent
+          parentNode.children.unshift(treeNode)
+        }
+      }
+    })
+
+    return rootFolders
+  }
+
   return {
     folders,
     notes,
     currentNote,
+    loadingNotesMap,
+    error,
+    loadedFolders,
     loadFolders,
     createFolder,
     deleteFolder,
@@ -253,6 +393,8 @@ export const useNotesStore = defineStore('notes', () => {
     createNoteLink,
     fetchNoteLinks,
     fetchBacklinks,
-    findNoteByTitle
+    findNoteByTitle,
+    // Tree transformation
+    transformFoldersToTree
   }
 })
