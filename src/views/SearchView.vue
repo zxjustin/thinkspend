@@ -1,29 +1,78 @@
 <template>
   <AppLayout>
-    <div class="max-w-3xl mx-auto">
-      <!-- Search Bar -->
-      <SearchBar
-        v-model="searchQuery"
-        :is-searching="isSearching"
-        @search="handleSearch"
-        class="mb-8"
-      />
+    <ResizableLayoutContainer storage-key="search-view-layout" :show-right-panel="false">
+      <template #left>
+        <div class="px-3 py-2.5 border-b flex-shrink-0" style="border-color: var(--notion-border);">
+          <div class="text-xs font-semibold notion-text-secondary uppercase tracking-wider">Search Stats</div>
+        </div>
+        <div class="flex-1 overflow-y-auto p-3">
+          <!-- Search Stats -->
+          <div class="pt-0" style="border-color: var(--notion-border);">
+            <p class="text-xs font-semibold notion-text-secondary mb-2 px-2">Index Stats</p>
+            <div class="space-y-1.5 text-xs notion-text-secondary px-2">
+              <div class="flex justify-between">
+                <span>Indexed Notes</span>
+                <span class="font-semibold notion-text-primary">{{ notesStore.notes.length }}</span>
+              </div>
+              <div class="flex justify-between">
+                <span>Indexed Expenses</span>
+                <span class="font-semibold notion-text-primary">{{ expensesStore.expenses.length }}</span>
+              </div>
+              <div class="flex justify-between">
+                <span>Total Documents</span>
+                <span class="font-semibold notion-text-primary">{{ totalDocuments }}</span>
+              </div>
+            </div>
+          </div>
 
-      <!-- Performance Stats -->
-      <div v-if="searchQuery && searchDuration > 0" class="mb-4 text-xs notion-text-tertiary">
-        <i class="pi pi-clock" style="font-size: 10px;"></i>
-        {{ searchDuration.toFixed(2) }}ms • {{ totalDocuments }} documents
-      </div>
+          <!-- Search Tips -->
+          <div class="border-t pt-3 mt-3" style="border-color: var(--notion-border);">
+            <p class="text-xs font-semibold notion-text-secondary mb-2 px-2">Tips</p>
+            <ul class="text-xs notion-text-secondary space-y-1 px-2">
+              <li class="flex gap-2">
+                <span class="flex-shrink-0">•</span>
+                <span>Use multiple words for better results</span>
+              </li>
+              <li class="flex gap-2">
+                <span class="flex-shrink-0">•</span>
+                <span>Search is case-insensitive</span>
+              </li>
+              <li class="flex gap-2">
+                <span class="flex-shrink-0">•</span>
+                <span>Results ranked by relevance</span>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </template>
 
-      <!-- Search Results -->
-      <SearchResults
-        :results="searchResults"
-        :query="searchQuery"
-        :is-searching="isSearching"
-        :show-scores="showDebugScores"
-        @result-click="handleResultClick"
-      />
-    </div>
+      <template #main>
+        <div class="flex-1 overflow-y-auto px-8 py-6">
+          <!-- Search Bar -->
+          <SearchBar
+            v-model="searchQuery"
+            :is-searching="isSearching"
+            @search="handleSearch"
+            class="mb-8"
+          />
+
+          <!-- Performance Stats -->
+          <div v-if="searchQuery && searchDuration > 0" class="mb-4 text-xs notion-text-tertiary">
+            <i class="pi pi-clock" style="font-size: 10px;"></i>
+            {{ searchDuration.toFixed(2) }}ms • {{ totalDocuments }} documents
+          </div>
+
+          <!-- Search Results -->
+          <SearchResults
+            :results="searchResults"
+            :query="searchQuery"
+            :is-searching="isSearching"
+            :show-scores="showDebugScores"
+            @result-click="handleResultClick"
+          />
+        </div>
+      </template>
+    </ResizableLayoutContainer>
   </AppLayout>
 </template>
 
@@ -34,6 +83,7 @@ import { useNotesStore } from '@/stores/notes'
 import { useExpensesStore } from '@/stores/expenses'
 import { useSearch } from '@/composables/useSearch'
 import AppLayout from '@/components/common/AppLayout.vue'
+import ResizableLayoutContainer from '@/components/common/ResizableLayoutContainer.vue'
 import SearchBar from '@/components/search/SearchBar.vue'
 import SearchResults from '@/components/search/SearchResults.vue'
 
