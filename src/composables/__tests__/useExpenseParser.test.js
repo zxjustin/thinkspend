@@ -124,4 +124,81 @@ describe('useExpenseParser', () => {
       expect(parser.detectedExpenses.value).toHaveLength(1)
     })
   })
+
+  describe('parseExpenses with date support', () => {
+    it('should parse expense with @yesterday date', () => {
+      const text = '$25 Lunch [Food] @yesterday'
+      const expenses = parser.parseExpenses(text)
+
+      expect(expenses).toHaveLength(1)
+      expect(expenses[0].amount).toBe(25)
+      expect(expenses[0].description).toBe('Lunch')
+      expect(expenses[0].date).not.toBeNull()
+      expect(expenses[0].dateStr).toBe('yesterday')
+    })
+
+    it('should parse expense with @today date', () => {
+      const text = '$100 Software [Software] @today'
+      const expenses = parser.parseExpenses(text)
+
+      expect(expenses).toHaveLength(1)
+      expect(expenses[0].amount).toBe(100)
+      expect(expenses[0].date).not.toBeNull()
+      expect(expenses[0].dateStr).toBe('today')
+    })
+
+    it('should parse expense with ISO format date @2025-11-10', () => {
+      const text = '$50 Transport [Transport] @2025-11-10'
+      const expenses = parser.parseExpenses(text)
+
+      expect(expenses).toHaveLength(1)
+      expect(expenses[0].date).toBe('2025-11-10')
+      expect(expenses[0].dateStr).toBe('2025-11-10')
+    })
+
+    it('should parse expense with MM/DD shorthand date @11/10', () => {
+      const text = '$45 Coffee [Food] @11/10'
+      const expenses = parser.parseExpenses(text)
+
+      expect(expenses).toHaveLength(1)
+      expect(expenses[0].date).not.toBeNull()
+      expect(expenses[0].dateStr).toBe('11/10')
+    })
+
+    it('should parse expense with relative date @5 days ago', () => {
+      const text = '$75 Groceries [Food] @5 days ago'
+      const expenses = parser.parseExpenses(text)
+
+      expect(expenses).toHaveLength(1)
+      expect(expenses[0].date).not.toBeNull()
+      expect(expenses[0].dateStr).toBe('5 days ago')
+    })
+
+    it('should parse expense without date (returns null)', () => {
+      const text = '$25 Lunch [Food]'
+      const expenses = parser.parseExpenses(text)
+
+      expect(expenses).toHaveLength(1)
+      expect(expenses[0].date).toBeNull()
+      expect(expenses[0].dateStr).toBeNull()
+    })
+
+    it('should parse multiple expenses with different dates', () => {
+      const text = '$25 Lunch [Food] @yesterday and $100 Software [Software] @2025-10-15 and $50 Transport [Transport]'
+      const expenses = parser.parseExpenses(text)
+
+      expect(expenses).toHaveLength(3)
+      expect(expenses[0].dateStr).toBe('yesterday')
+      expect(expenses[1].dateStr).toBe('2025-10-15')
+      expect(expenses[2].dateStr).toBeNull()
+    })
+
+    it('should ignore invalid dates', () => {
+      const text = '$25 Lunch [Food] @invalid-date'
+      const expenses = parser.parseExpenses(text)
+
+      expect(expenses).toHaveLength(1)
+      expect(expenses[0].date).toBeNull()
+    })
+  })
 })
