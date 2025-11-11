@@ -77,11 +77,24 @@
               <AccordionContent>
                 <div class="space-y-3 text-sm notion-text-secondary">
                   <div>
-                    <span class="font-medium">Format:</span>
+                    <span class="font-medium">Basic Format:</span>
                     <code class="px-2 py-0.5 rounded ml-1 text-xs" style="background-color: var(--notion-bg-selected);">$25 Lunch [Food]</code>
                   </div>
 
-                  <!-- Date Override Option -->
+                  <!-- Date Support Info -->
+                  <div class="pt-2 border-t" style="border-color: var(--accent-green);">
+                    <p class="text-xs font-medium notion-text-secondary mb-2">Add dates with @date syntax (optional):</p>
+                    <div class="text-xs notion-text-tertiary space-y-1 ml-2">
+                      <div><code style="background-color: var(--notion-bg-selected); padding: 2px 4px; border-radius: 2px;">@yesterday</code> - Previous day</div>
+                      <div><code style="background-color: var(--notion-bg-selected); padding: 2px 4px; border-radius: 2px;">@today</code> - Current day (default)</div>
+                      <div><code style="background-color: var(--notion-bg-selected); padding: 2px 4px; border-radius: 2px;">@2025-11-10</code> - Specific date</div>
+                      <div><code style="background-color: var(--notion-bg-selected); padding: 2px 4px; border-radius: 2px;">@11/10</code> - MM/DD format</div>
+                      <div><code style="background-color: var(--notion-bg-selected); padding: 2px 4px; border-radius: 2px;">@5 days ago</code> - Relative date</div>
+                    </div>
+                    <p class="text-xs notion-text-tertiary mt-2">Example: <code style="background-color: var(--notion-bg-selected); padding: 2px 4px; border-radius: 2px;">$25 Lunch [Food] @yesterday</code></p>
+                  </div>
+
+                  <!-- Legacy Date Override Option -->
                   <div class="pt-2 border-t" style="border-color: var(--accent-green);">
                     <label class="flex items-center gap-2 mb-2">
                       <input
@@ -90,7 +103,7 @@
                         class="rounded border-gray-300"
                         style="color: var(--accent-green);"
                       />
-                      <span class="text-xs font-medium">Use custom date for expenses</span>
+                      <span class="text-xs font-medium">Use custom date for all expenses in this note</span>
                     </label>
                     <div v-if="useCustomExpenseDate" class="flex items-center gap-2">
                       <input
@@ -108,7 +121,7 @@
                       </button>
                     </div>
                     <p class="text-xs notion-text-tertiary mt-1">
-                      {{ useCustomExpenseDate ? 'Expenses will use: ' + formatExpenseDate(customExpenseDate) : 'Expenses will use the note creation date' }}
+                      {{ useCustomExpenseDate ? 'Default date will be: ' + formatExpenseDate(customExpenseDate) : 'Uses @date syntax or note creation date' }}
                     </p>
                   </div>
 
@@ -350,25 +363,58 @@ async function processDetectedExpenses() {
 
   const { data: existingExpenses } = await supabase
     .from('expenses')
-    .select('amount, description, category')
+    .select('id, amount, description, category')
     .eq('source_note_id', currentNote.value.id)
 
-  const existingKeys = new Set(
-    (existingExpenses || []).map(e => `${e.amount}-${e.description}-${e.category}`)
+  const existingExpenseMap = new Map(
+    (existingExpenses || []).map(e => [
+      `${e.amount}-${e.description}-${e.category}`,
+      e.id
+    ])
   )
 
+  // Get current expenses detected in the note
+  const currentExpenseKeys = new Set(
+    detectedExpenses.value.map(e => `${e.amount}-${e.description}-${e.category}`)
+  )
+
+  // Delete expenses that are no longer in the note
+  for (const [expenseKey, expenseId] of existingExpenseMap) {
+    if (!currentExpenseKeys.has(expenseKey) && !processedExpenses.value.has(expenseKey)) {
+      try {
+        await supabase
+          .from('expenses')
+          .delete()
+          .eq('id', expenseId)
+
+        console.log('🗑️ Deleted removed expense:', expenseKey)
+      } catch (error) {
+        console.error('❌ Failed to delete expense:', error)
+      }
+    }
+  }
+
+  // Add new expenses
   for (const expense of detectedExpenses.value) {
     const expenseKey = `${expense.amount}-${expense.description}-${expense.category}`
 
-    if (existingKeys.has(expenseKey) || processedExpenses.value.has(expenseKey)) {
+    if (existingExpenseMap.has(expenseKey) || processedExpenses.value.has(expenseKey)) {
       console.log('⏭️ Skipping duplicate expense:', expenseKey)
       continue
     }
 
     try {
-      const expenseDate = useCustomExpenseDate.value
-        ? customExpenseDate.value
-        : currentNote.value.created_at.split('T')[0]
+      // Use parsed date from expense if available, otherwise fall back to custom or today's date
+      let expenseDate
+      if (expense.date) {
+        // Date was parsed from @date syntax in the expense format
+        expenseDate = expense.date
+      } else if (useCustomExpenseDate.value) {
+        expenseDate = customExpenseDate.value
+      } else {
+        // Default to today's date (standard expense app behavior)
+        expenseDate = new Date().toISOString().split('T')[0]
+      }
 
       const createdExpense = await expensesStore.createExpense({
         amount: expense.amount,
@@ -387,7 +433,7 @@ async function processDetectedExpenses() {
       )
 
       processedExpenses.value.add(expenseKey)
-      existingKeys.add(expenseKey)
+      existingExpenseMap.set(expenseKey, createdExpense.id)
 
       console.log('✅ Created expense:', createdExpense)
     } catch (error) {

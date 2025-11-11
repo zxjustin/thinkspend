@@ -1,40 +1,46 @@
 <template>
   <AppLayout>
-    <!-- Toggle Graph Button -->
-    <div class="mb-6 flex items-center gap-2">
-      <button
-        @click="showGraphView = !showGraphView"
-        :class="[
-          'notion-button text-sm',
-          showGraphView ? 'notion-bg-selected' : ''
-        ]"
-      >
-        <i :class="showGraphView ? 'pi pi-times' : 'pi pi-sitemap'" style="font-size: 13px;"></i>
-        <span>{{ showGraphView ? 'Close Graph' : 'Knowledge Graph' }}</span>
-      </button>
-    </div>
+    <div class="flex flex-col h-full overflow-hidden">
+      <!-- Toggle Graph Button - Fixed height, no vertical margin -->
+      <div class="flex-shrink-0 flex items-center gap-2 px-1 py-2">
+        <button
+          @click="showGraphView = !showGraphView"
+          :class="[
+            'notion-button text-sm',
+            showGraphView ? 'notion-bg-selected' : ''
+          ]"
+        >
+          <i :class="showGraphView ? 'pi pi-times' : 'pi pi-sitemap'" style="font-size: 13px;"></i>
+          <span>{{ showGraphView ? 'Close Graph' : 'Knowledge Graph' }}</span>
+        </button>
+      </div>
 
-    <div class="flex flex-col lg:flex-row gap-4 h-[calc(100vh-200px)]">
-      <!-- Sidebar -->
-      <NoteSidebar class="w-full lg:w-64 lg:flex-shrink-0" />
+      <!-- Main Content - Flexes to fill remaining space -->
+      <div class="flex-1 min-h-0 overflow-hidden">
+        <ResizableLayoutContainer
+          storage-key="notes-view-layout"
+          :show-right-panel="!showGraphView && showConnectionPanel && currentNote"
+        >
+          <template #left>
+            <NoteSidebar />
+          </template>
 
-      <!-- Editor or Graph View -->
-      <GraphView
-        v-if="showGraphView"
-        class="flex-1 min-h-[400px] lg:min-h-0"
-        @close="showGraphView = false"
-      />
-      <NoteEditor
-        v-else
-        class="flex-1 min-h-[400px] lg:min-h-0"
-      />
+          <template #main>
+            <GraphView
+              v-if="showGraphView"
+              @close="showGraphView = false"
+            />
+            <NoteEditor v-else />
+          </template>
 
-      <!-- Connection Panel (only show when not in graph view) -->
-      <ConnectionPanel
-        v-if="!showGraphView && showConnectionPanel && currentNote"
-        class="w-full lg:w-80 lg:flex-shrink-0"
-        @close="showConnectionPanel = false"
-      />
+          <template #right>
+            <ConnectionPanel
+              v-if="!showGraphView && showConnectionPanel && currentNote"
+              @close="showConnectionPanel = false"
+            />
+          </template>
+        </ResizableLayoutContainer>
+      </div>
     </div>
   </AppLayout>
 </template>
@@ -43,6 +49,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useNotesStore } from '@/stores/notes'
 import AppLayout from '@/components/common/AppLayout.vue'
+import ResizableLayoutContainer from '@/components/common/ResizableLayoutContainer.vue'
 import NoteSidebar from '@/components/notes/NoteSidebar.vue'
 import NoteEditor from '@/components/notes/NoteEditor.vue'
 import ConnectionPanel from '@/components/notes/ConnectionPanel.vue'
