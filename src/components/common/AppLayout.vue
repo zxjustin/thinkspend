@@ -81,10 +81,8 @@
     </nav>
 
     <!-- Main Content - Flexes to fill remaining space -->
-    <main class="flex-1 min-h-0 overflow-y-auto">
-      <div class="max-w-7xl mx-auto px-8 py-8">
-        <slot />
-      </div>
+    <main class="flex-1 min-h-0 overflow-hidden">
+      <slot />
     </main>
   </div>
 </template>
