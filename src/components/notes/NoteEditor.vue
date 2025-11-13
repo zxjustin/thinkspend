@@ -335,15 +335,29 @@ watch([title, content], () => {
 
 // Load note when selected
 watch(currentNote, (note) => {
-  if (note && editor.value) {
+  if (note) {
     title.value = note.title || ''
     content.value = note.content || ''
 
-    editor.value.commands.setContent(note.content || '')
+    // Wait for editor to be ready before setting content
+    if (editor.value) {
+      editor.value.commands.setContent(note.content || '')
+    } else {
+      // If editor isn't ready yet, it will load from content.value via the watch
+      console.log('⏳ Editor not ready yet, content will load when ready')
+    }
 
     saveStatus.value = 'saved'
     processedExpenses.value.clear()
     processedLinks.value.clear()
+  }
+}, { immediate: true })
+
+// Watch editor to load content when it becomes ready
+watch(editor, () => {
+  if (editor.value && currentNote.value && content.value) {
+    editor.value.commands.setContent(content.value)
+    console.log('✅ Editor ready, content loaded:', currentNote.value.title)
   }
 })
 
