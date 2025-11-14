@@ -382,14 +382,14 @@ async function processDetectedExpenses() {
 
   const existingExpenseMap = new Map(
     (existingExpenses || []).map(e => [
-      `${e.amount}-${e.description}-${e.category}`,
+      `${e.amount}-${e.description}-${e.category}-${e.date || 'no-date'}`,
       e.id
     ])
   )
 
   // Get current expenses detected in the note
   const currentExpenseKeys = new Set(
-    detectedExpenses.value.map(e => `${e.amount}-${e.description}-${e.category}`)
+    detectedExpenses.value.map(e => `${e.amount}-${e.description}-${e.category}-${e.date || 'no-date'}`)
   )
 
   // Delete expenses that are no longer in the note
@@ -410,7 +410,7 @@ async function processDetectedExpenses() {
 
   // Add new expenses
   for (const expense of detectedExpenses.value) {
-    const expenseKey = `${expense.amount}-${expense.description}-${expense.category}`
+    const expenseKey = `${expense.amount}-${expense.description}-${expense.category}-${expense.date || 'no-date'}`
 
     if (existingExpenseMap.has(expenseKey) || processedExpenses.value.has(expenseKey)) {
       console.log('⏭️ Skipping duplicate expense:', expenseKey)
