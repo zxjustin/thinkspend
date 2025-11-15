@@ -90,7 +90,7 @@ import { useNotesStore } from '@/stores/notes'
 import Button from 'primevue/button'
 import * as d3 from 'd3'
 
-defineEmits(['close'])
+const emit = defineEmits(['close'])
 
 const notesStore = useNotesStore()
 const svgRef = ref(null)
@@ -216,6 +216,8 @@ function renderGraph() {
       // Navigate to clicked note
       notesStore.selectNote(d.id)
       console.log('📍 Selected note from graph:', d.title)
+      // Close graph view to show the full note editor
+      emit('close')
     })
 
   // Add circles to nodes
