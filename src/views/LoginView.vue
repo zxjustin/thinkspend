@@ -15,24 +15,26 @@
       <template #content>
         <div class="space-y-4 px-6 pb-6">
           <!-- Email Input -->
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">Email</label>
-            <InputText 
-              v-model="email" 
+          <div class="w-full flex flex-col gap-2">
+            <label class="text-sm font-medium text-gray-700">Email</label>
+            <InputText
+              v-model="email"
               type="email"
               placeholder="you@example.com"
+              fluid
               class="w-full"
             />
           </div>
 
           <!-- Password Input -->
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">Password</label>
-            <Password 
-              v-model="password" 
+          <div class="w-full flex flex-col gap-2">
+            <label class="text-sm font-medium text-gray-700">Password</label>
+            <Password
+              v-model="password"
               placeholder="••••••••"
               :feedback="false"
               toggleMask
+              fluid
               class="w-full"
             />
           </div>
