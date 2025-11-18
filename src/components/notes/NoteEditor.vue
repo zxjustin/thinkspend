@@ -498,7 +498,6 @@ async function processDetectedLinks() {
   for (const processedLink of processedLinks.value) {
     if (!currentLinkSet.has(processedLink)) {
       processedLinks.value.delete(processedLink)
-      console.log('🗑️ Removed deleted link from tracking:', processedLink)
     }
   }
 }
