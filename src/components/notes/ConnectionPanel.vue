@@ -43,7 +43,7 @@
             >
               <div class="flex items-baseline justify-between mb-1">
                 <div class="font-semibold text-sm" style="color: var(--accent-green);">${{ exp.amount }}</div>
-                <div class="text-[9px] px-1.5 py-0.5 rounded font-medium" style="background-color: var(--notion-bg); color: var(--accent-green);">{{ exp.category }}</div>
+                <div class="text-[9px] px-1.5 py-0.5 rounded font-medium" style="color: var(--accent-green);">{{ exp.category }}</div>
               </div>
               <div class="notion-text-primary text-xs">{{ exp.description }}</div>
             </div>
