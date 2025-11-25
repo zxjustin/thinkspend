@@ -1,6 +1,6 @@
 <template>
   <div class="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 flex items-center justify-center p-4">
-    <Card class="w-full max-w-md shadow-2xl">
+    <Card class="w-1/4 md:w-full shadow-2xl">
       <template #header>
         <div class="flex flex-col items-center pt-6 pb-4">
           <!-- Logo -->
