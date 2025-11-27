@@ -17,9 +17,11 @@ export const useAuthStore = defineStore('auth', () => {
       })
       if (signInError) throw signInError
       user.value = data.user
+      return data
     } catch (err) {
       error.value = err.message
       console.error('Sign in error:', err)
+      throw err
     } finally {
       loading.value = false
     }
@@ -34,10 +36,18 @@ export const useAuthStore = defineStore('auth', () => {
         password
       })
       if (signUpError) throw signUpError
+
+      // Check if email confirmation is required
+      if (data.user && !data.session) {
+        throw new Error('Please check your email to confirm your account')
+      }
+
       user.value = data.user
+      return data
     } catch (err) {
       error.value = err.message
       console.error('Sign up error:', err)
+      throw err
     } finally {
       loading.value = false
     }
