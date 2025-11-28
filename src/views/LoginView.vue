@@ -7,8 +7,8 @@
           <div class="w-16 h-16 bg-gradient-to-br from-blue-600 to-purple-600 rounded-xl flex items-center justify-center mb-4">
             <span class="text-white font-bold text-3xl">TS</span>
           </div>
-          <h1 class="text-2xl font-bold text-gray-800">ThinkSpend</h1>
-          <p class="text-sm text-gray-500 mt-1">Personal Knowledge Management + Expenses</p>
+          <h1 class="text-2xl font-bold text-gray-800">Welcome Back</h1>
+          <p class="text-sm text-gray-500 mt-1">Sign in to your ThinkSpend account</p>
         </div>
       </template>
 
@@ -36,6 +36,7 @@
               toggleMask
               fluid
               class="w-full"
+              @keyup.enter="handleSignIn"
             />
           </div>
 
@@ -46,25 +47,20 @@
 
           <!-- Buttons -->
           <div class="space-y-2 pt-2">
-            <Button 
-              label="Sign In" 
+            <Button
+              label="Sign In"
               @click="handleSignIn"
               :loading="loading"
               class="w-full bg-gradient-to-r from-blue-600 to-purple-600 border-0"
             />
-            <Button 
-              label="Create Account" 
-              @click="handleSignUp"
-              :loading="loading"
-              severity="secondary"
-              outlined
-              class="w-full"
-            />
           </div>
 
-          <!-- Info -->
-          <div class="text-center text-xs text-gray-500 mt-4 pt-4 border-t border-gray-200">
-            Use any email/password to create an account
+          <!-- Sign Up Link -->
+          <div class="text-center text-sm text-gray-600 mt-4 pt-4 border-t border-gray-200">
+            Don't have an account?
+            <router-link to="/signup" class="text-blue-600 hover:text-blue-700 font-medium">
+              Create Account
+            </router-link>
           </div>
         </div>
       </template>
@@ -90,39 +86,31 @@ const password = ref('')
 const loading = ref(false)
 const errorMessage = ref('')
 
+function validateEmail(email) {
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+  return emailRegex.test(email)
+}
+
 async function handleSignIn() {
+  errorMessage.value = ''
+
   if (!email.value || !password.value) {
     errorMessage.value = 'Please enter email and password'
     return
   }
 
+  if (!validateEmail(email.value)) {
+    errorMessage.value = 'Please enter a valid email address'
+    return
+  }
+
   loading.value = true
-  errorMessage.value = ''
 
   try {
     await authStore.signIn(email.value, password.value)
     router.push('/notes')
   } catch (error) {
-    errorMessage.value = error.message || 'Invalid credentials'
-  } finally {
-    loading.value = false
-  }
-}
-
-async function handleSignUp() {
-  if (!email.value || !password.value) {
-    errorMessage.value = 'Please enter email and password'
-    return
-  }
-
-  loading.value = true
-  errorMessage.value = ''
-
-  try {
-    await authStore.signUp(email.value, password.value)
-    router.push('/notes')
-  } catch (error) {
-    errorMessage.value = error.message || 'Could not create account'
+    errorMessage.value = error.message || 'Invalid email or password'
   } finally {
     loading.value = false
   }
